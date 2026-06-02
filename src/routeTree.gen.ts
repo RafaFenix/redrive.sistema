@@ -17,6 +17,7 @@ import { Route as BuyerRouteImport } from './routes/buyer'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions.index'
 import { Route as BuyerDashboardRouteImport } from './routes/buyer.dashboard'
+import { Route as BuyerBidsRouteImport } from './routes/buyer.bids'
 import { Route as AuctionsIdRouteImport } from './routes/auctions.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -59,6 +60,11 @@ const BuyerDashboardRoute = BuyerDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => BuyerRoute,
 } as any)
+const BuyerBidsRoute = BuyerBidsRouteImport.update({
+  id: '/bids',
+  path: '/bids',
+  getParentRoute: () => BuyerRoute,
+} as any)
 const AuctionsIdRoute = AuctionsIdRouteImport.update({
   id: '/auctions/$id',
   path: '/auctions/$id',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
   '/auctions/': typeof AuctionsIndexRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
   '/auctions': typeof AuctionsIndexRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
   '/auctions/': typeof AuctionsIndexRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/auctions/$id'
+    | '/buyer/bids'
     | '/buyer/dashboard'
     | '/auctions/'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/auctions/$id'
+    | '/buyer/bids'
     | '/buyer/dashboard'
     | '/auctions'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/auctions/$id'
+    | '/buyer/bids'
     | '/buyer/dashboard'
     | '/auctions/'
   fileRoutesById: FileRoutesById
@@ -204,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuyerDashboardRouteImport
       parentRoute: typeof BuyerRoute
     }
+    '/buyer/bids': {
+      id: '/buyer/bids'
+      path: '/bids'
+      fullPath: '/buyer/bids'
+      preLoaderRoute: typeof BuyerBidsRouteImport
+      parentRoute: typeof BuyerRoute
+    }
     '/auctions/$id': {
       id: '/auctions/$id'
       path: '/auctions/$id'
@@ -215,10 +234,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface BuyerRouteChildren {
+  BuyerBidsRoute: typeof BuyerBidsRoute
   BuyerDashboardRoute: typeof BuyerDashboardRoute
 }
 
 const BuyerRouteChildren: BuyerRouteChildren = {
+  BuyerBidsRoute: BuyerBidsRoute,
   BuyerDashboardRoute: BuyerDashboardRoute,
 }
 
