@@ -16,6 +16,7 @@ import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as BuyerRouteImport } from './routes/buyer'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions.index'
+import { Route as BuyerDashboardRouteImport } from './routes/buyer.dashboard'
 import { Route as AuctionsIdRouteImport } from './routes/auctions.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -53,6 +54,11 @@ const AuctionsIndexRoute = AuctionsIndexRouteImport.update({
   path: '/auctions/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuyerDashboardRoute = BuyerDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => BuyerRoute,
+} as any)
 const AuctionsIdRoute = AuctionsIdRouteImport.update({
   id: '/auctions/$id',
   path: '/auctions/$id',
@@ -61,33 +67,36 @@ const AuctionsIdRoute = AuctionsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/buyer': typeof BuyerRoute
+  '/buyer': typeof BuyerRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/dashboard': typeof BuyerDashboardRoute
   '/auctions/': typeof AuctionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/buyer': typeof BuyerRoute
+  '/buyer': typeof BuyerRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/dashboard': typeof BuyerDashboardRoute
   '/auctions': typeof AuctionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/buyer': typeof BuyerRoute
+  '/buyer': typeof BuyerRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/dashboard': typeof BuyerDashboardRoute
   '/auctions/': typeof AuctionsIndexRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/auctions/$id'
+    | '/buyer/dashboard'
     | '/auctions/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/auctions/$id'
+    | '/buyer/dashboard'
     | '/auctions'
   id:
     | '__root__'
@@ -120,12 +131,13 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/auctions/$id'
+    | '/buyer/dashboard'
     | '/auctions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BuyerRoute: typeof BuyerRoute
+  BuyerRoute: typeof BuyerRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
   LoginRoute: typeof LoginRoute
   PendingApprovalRoute: typeof PendingApprovalRoute
@@ -185,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuctionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/buyer/dashboard': {
+      id: '/buyer/dashboard'
+      path: '/dashboard'
+      fullPath: '/buyer/dashboard'
+      preLoaderRoute: typeof BuyerDashboardRouteImport
+      parentRoute: typeof BuyerRoute
+    }
     '/auctions/$id': {
       id: '/auctions/$id'
       path: '/auctions/$id'
@@ -195,9 +214,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface BuyerRouteChildren {
+  BuyerDashboardRoute: typeof BuyerDashboardRoute
+}
+
+const BuyerRouteChildren: BuyerRouteChildren = {
+  BuyerDashboardRoute: BuyerDashboardRoute,
+}
+
+const BuyerRouteWithChildren = BuyerRoute._addFileChildren(BuyerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BuyerRoute: BuyerRoute,
+  BuyerRoute: BuyerRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
   LoginRoute: LoginRoute,
   PendingApprovalRoute: PendingApprovalRoute,
