@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PendingApprovalRouteImport } from './routes/pending-approval'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions.index'
@@ -18,6 +19,11 @@ import { Route as AuctionsIdRouteImport } from './routes/auctions.$id'
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PendingApprovalRoute = PendingApprovalRouteImport.update({
+  id: '/pending-approval',
+  path: '/pending-approval',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -44,6 +50,7 @@ const AuctionsIdRoute = AuctionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
   '/auctions/': typeof AuctionsIndexRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
   '/auctions': typeof AuctionsIndexRoute
@@ -59,21 +67,42 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/auctions/$id': typeof AuctionsIdRoute
   '/auctions/': typeof AuctionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/auctions/$id' | '/auctions/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/pending-approval'
+    | '/register'
+    | '/auctions/$id'
+    | '/auctions/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/auctions/$id' | '/auctions'
-  id: '__root__' | '/' | '/login' | '/register' | '/auctions/$id' | '/auctions/'
+  to:
+    | '/'
+    | '/login'
+    | '/pending-approval'
+    | '/register'
+    | '/auctions/$id'
+    | '/auctions'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/pending-approval'
+    | '/register'
+    | '/auctions/$id'
+    | '/auctions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  PendingApprovalRoute: typeof PendingApprovalRoute
   RegisterRoute: typeof RegisterRoute
   AuctionsIdRoute: typeof AuctionsIdRoute
   AuctionsIndexRoute: typeof AuctionsIndexRoute
@@ -86,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pending-approval': {
+      id: '/pending-approval'
+      path: '/pending-approval'
+      fullPath: '/pending-approval'
+      preLoaderRoute: typeof PendingApprovalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -122,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  PendingApprovalRoute: PendingApprovalRoute,
   RegisterRoute: RegisterRoute,
   AuctionsIdRoute: AuctionsIdRoute,
   AuctionsIndexRoute: AuctionsIndexRoute,
