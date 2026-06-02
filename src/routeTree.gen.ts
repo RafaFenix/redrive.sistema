@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions.index'
+import { Route as AuctionsIdRouteImport } from './routes/auctions.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const AuctionsIndexRoute = AuctionsIndexRouteImport.update({
   path: '/auctions/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuctionsIdRoute = AuctionsIdRouteImport.update({
+  id: '/auctions/$id',
+  path: '/auctions/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auctions/$id': typeof AuctionsIdRoute
   '/auctions/': typeof AuctionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auctions/$id': typeof AuctionsIdRoute
   '/auctions': typeof AuctionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auctions/$id': typeof AuctionsIdRoute
   '/auctions/': typeof AuctionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auctions/'
+  fullPaths: '/' | '/auctions/$id' | '/auctions/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auctions'
-  id: '__root__' | '/' | '/auctions/'
+  to: '/' | '/auctions/$id' | '/auctions'
+  id: '__root__' | '/' | '/auctions/$id' | '/auctions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuctionsIdRoute: typeof AuctionsIdRoute
   AuctionsIndexRoute: typeof AuctionsIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuctionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auctions/$id': {
+      id: '/auctions/$id'
+      path: '/auctions/$id'
+      fullPath: '/auctions/$id'
+      preLoaderRoute: typeof AuctionsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuctionsIdRoute: AuctionsIdRoute,
   AuctionsIndexRoute: AuctionsIndexRoute,
 }
 export const routeTree = rootRouteImport
