@@ -22,6 +22,7 @@ import { Route as BuyerNegotiationsRouteImport } from './routes/buyer.negotiatio
 import { Route as BuyerDashboardRouteImport } from './routes/buyer.dashboard'
 import { Route as BuyerBidsRouteImport } from './routes/buyer.bids'
 import { Route as AuctionsIdRouteImport } from './routes/auctions.$id'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminVehiclesIndexRouteImport } from './routes/admin.vehicles.index'
 import { Route as AdminAuctionsIndexRouteImport } from './routes/admin.auctions.index'
@@ -94,6 +95,11 @@ const AuctionsIdRoute = AuctionsIdRouteImport.update({
   path: '/auctions/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auctions/$id': typeof AuctionsIdRoute
   '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auctions/$id': typeof AuctionsIdRoute
   '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auctions/$id': typeof AuctionsIdRoute
   '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/admin/dashboard'
+    | '/admin/users'
     | '/auctions/$id'
     | '/buyer/bids'
     | '/buyer/dashboard'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/admin/dashboard'
+    | '/admin/users'
     | '/auctions/$id'
     | '/buyer/bids'
     | '/buyer/dashboard'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/admin/dashboard'
+    | '/admin/users'
     | '/auctions/$id'
     | '/buyer/bids'
     | '/buyer/dashboard'
@@ -360,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuctionsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/dashboard': {
       id: '/admin/dashboard'
       path: '/dashboard'
@@ -407,6 +426,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminAuctionsIdRoute: typeof AdminAuctionsIdRoute
   AdminAuctionsNewRoute: typeof AdminAuctionsNewRoute
   AdminVehiclesNewRoute: typeof AdminVehiclesNewRoute
@@ -416,6 +436,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminAuctionsIdRoute: AdminAuctionsIdRoute,
   AdminAuctionsNewRoute: AdminAuctionsNewRoute,
   AdminVehiclesNewRoute: AdminVehiclesNewRoute,
