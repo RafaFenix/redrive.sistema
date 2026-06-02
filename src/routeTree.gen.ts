@@ -14,6 +14,7 @@ import { Route as PendingApprovalRouteImport } from './routes/pending-approval'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as BuyerRouteImport } from './routes/buyer'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions.index'
 import { Route as BuyerWonRouteImport } from './routes/buyer.won'
@@ -45,6 +46,11 @@ const HowItWorksRoute = HowItWorksRouteImport.update({
 const BuyerRoute = BuyerRouteImport.update({
   id: '/buyer',
   path: '/buyer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -85,6 +91,7 @@ const AuctionsIdRoute = AuctionsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/buyer': typeof BuyerRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/buyer': typeof BuyerRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
@@ -114,6 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/buyer': typeof BuyerRouteWithChildren
   '/how-it-works': typeof HowItWorksRoute
   '/login': typeof LoginRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/buyer'
     | '/how-it-works'
     | '/login'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/buyer'
     | '/how-it-works'
     | '/login'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/buyer'
     | '/how-it-works'
     | '/login'
@@ -173,6 +185,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   BuyerRoute: typeof BuyerRouteWithChildren
   HowItWorksRoute: typeof HowItWorksRoute
   LoginRoute: typeof LoginRoute
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       path: '/buyer'
       fullPath: '/buyer'
       preLoaderRoute: typeof BuyerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -289,6 +309,7 @@ const BuyerRouteWithChildren = BuyerRoute._addFileChildren(BuyerRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   BuyerRoute: BuyerRouteWithChildren,
   HowItWorksRoute: HowItWorksRoute,
   LoginRoute: LoginRoute,
