@@ -23,6 +23,7 @@ import { Route as BuyerDashboardRouteImport } from './routes/buyer.dashboard'
 import { Route as BuyerBidsRouteImport } from './routes/buyer.bids'
 import { Route as AuctionsIdRouteImport } from './routes/auctions.$id'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminVehiclesIndexRouteImport } from './routes/admin.vehicles.index'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -94,6 +95,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVehiclesIndexRoute = AdminVehiclesIndexRouteImport.update({
+  id: '/vehicles/',
+  path: '/vehicles/',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/buyer/negotiations': typeof BuyerNegotiationsRoute
   '/buyer/won': typeof BuyerWonRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/admin/vehicles/': typeof AdminVehiclesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/buyer/negotiations': typeof BuyerNegotiationsRoute
   '/buyer/won': typeof BuyerWonRoute
   '/auctions': typeof AuctionsIndexRoute
+  '/admin/vehicles': typeof AdminVehiclesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/buyer/negotiations': typeof BuyerNegotiationsRoute
   '/buyer/won': typeof BuyerWonRoute
   '/auctions/': typeof AuctionsIndexRoute
+  '/admin/vehicles/': typeof AdminVehiclesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/buyer/negotiations'
     | '/buyer/won'
     | '/auctions/'
+    | '/admin/vehicles/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/buyer/negotiations'
     | '/buyer/won'
     | '/auctions'
+    | '/admin/vehicles'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/buyer/negotiations'
     | '/buyer/won'
     | '/auctions/'
+    | '/admin/vehicles/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -307,15 +319,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/vehicles/': {
+      id: '/admin/vehicles/'
+      path: '/vehicles'
+      fullPath: '/admin/vehicles/'
+      preLoaderRoute: typeof AdminVehiclesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminVehiclesIndexRoute: typeof AdminVehiclesIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminVehiclesIndexRoute: AdminVehiclesIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
