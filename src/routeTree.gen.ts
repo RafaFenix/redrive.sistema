@@ -9,38 +9,332 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PendingApprovalRouteImport } from './routes/pending-approval'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as BuyerRouteImport } from './routes/buyer'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuctionsIndexRouteImport } from './routes/auctions.index'
+import { Route as BuyerWonRouteImport } from './routes/buyer.won'
+import { Route as BuyerNegotiationsRouteImport } from './routes/buyer.negotiations'
+import { Route as BuyerDashboardRouteImport } from './routes/buyer.dashboard'
+import { Route as BuyerBidsRouteImport } from './routes/buyer.bids'
+import { Route as AuctionsIdRouteImport } from './routes/auctions.$id'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminNegotiationsRouteImport } from './routes/admin.negotiations'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminVehiclesIndexRouteImport } from './routes/admin.vehicles.index'
+import { Route as AdminAuctionsIndexRouteImport } from './routes/admin.auctions.index'
+import { Route as AdminVehiclesNewRouteImport } from './routes/admin.vehicles.new'
+import { Route as AdminAuctionsNewRouteImport } from './routes/admin.auctions.new'
+import { Route as AdminAuctionsIdRouteImport } from './routes/admin.auctions.$id'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PendingApprovalRoute = PendingApprovalRouteImport.update({
+  id: '/pending-approval',
+  path: '/pending-approval',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuyerRoute = BuyerRouteImport.update({
+  id: '/buyer',
+  path: '/buyer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuctionsIndexRoute = AuctionsIndexRouteImport.update({
+  id: '/auctions/',
+  path: '/auctions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuyerWonRoute = BuyerWonRouteImport.update({
+  id: '/won',
+  path: '/won',
+  getParentRoute: () => BuyerRoute,
+} as any)
+const BuyerNegotiationsRoute = BuyerNegotiationsRouteImport.update({
+  id: '/negotiations',
+  path: '/negotiations',
+  getParentRoute: () => BuyerRoute,
+} as any)
+const BuyerDashboardRoute = BuyerDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => BuyerRoute,
+} as any)
+const BuyerBidsRoute = BuyerBidsRouteImport.update({
+  id: '/bids',
+  path: '/bids',
+  getParentRoute: () => BuyerRoute,
+} as any)
+const AuctionsIdRoute = AuctionsIdRouteImport.update({
+  id: '/auctions/$id',
+  path: '/auctions/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNegotiationsRoute = AdminNegotiationsRouteImport.update({
+  id: '/negotiations',
+  path: '/negotiations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVehiclesIndexRoute = AdminVehiclesIndexRouteImport.update({
+  id: '/vehicles/',
+  path: '/vehicles/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuctionsIndexRoute = AdminAuctionsIndexRouteImport.update({
+  id: '/auctions/',
+  path: '/auctions/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVehiclesNewRoute = AdminVehiclesNewRouteImport.update({
+  id: '/vehicles/new',
+  path: '/vehicles/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuctionsNewRoute = AdminAuctionsNewRouteImport.update({
+  id: '/auctions/new',
+  path: '/auctions/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuctionsIdRoute = AdminAuctionsIdRouteImport.update({
+  id: '/auctions/$id',
+  path: '/auctions/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/buyer': typeof BuyerRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
+  '/register': typeof RegisterRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/negotiations': typeof AdminNegotiationsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/bids': typeof BuyerBidsRoute
+  '/buyer/dashboard': typeof BuyerDashboardRoute
+  '/buyer/negotiations': typeof BuyerNegotiationsRoute
+  '/buyer/won': typeof BuyerWonRoute
+  '/auctions/': typeof AuctionsIndexRoute
+  '/admin/auctions/$id': typeof AdminAuctionsIdRoute
+  '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/vehicles/new': typeof AdminVehiclesNewRoute
+  '/admin/auctions/': typeof AdminAuctionsIndexRoute
+  '/admin/vehicles/': typeof AdminVehiclesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/buyer': typeof BuyerRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
+  '/register': typeof RegisterRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/negotiations': typeof AdminNegotiationsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/bids': typeof BuyerBidsRoute
+  '/buyer/dashboard': typeof BuyerDashboardRoute
+  '/buyer/negotiations': typeof BuyerNegotiationsRoute
+  '/buyer/won': typeof BuyerWonRoute
+  '/auctions': typeof AuctionsIndexRoute
+  '/admin/auctions/$id': typeof AdminAuctionsIdRoute
+  '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/vehicles/new': typeof AdminVehiclesNewRoute
+  '/admin/auctions': typeof AdminAuctionsIndexRoute
+  '/admin/vehicles': typeof AdminVehiclesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/buyer': typeof BuyerRouteWithChildren
+  '/how-it-works': typeof HowItWorksRoute
+  '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
+  '/register': typeof RegisterRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/negotiations': typeof AdminNegotiationsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/auctions/$id': typeof AuctionsIdRoute
+  '/buyer/bids': typeof BuyerBidsRoute
+  '/buyer/dashboard': typeof BuyerDashboardRoute
+  '/buyer/negotiations': typeof BuyerNegotiationsRoute
+  '/buyer/won': typeof BuyerWonRoute
+  '/auctions/': typeof AuctionsIndexRoute
+  '/admin/auctions/$id': typeof AdminAuctionsIdRoute
+  '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/vehicles/new': typeof AdminVehiclesNewRoute
+  '/admin/auctions/': typeof AdminAuctionsIndexRoute
+  '/admin/vehicles/': typeof AdminVehiclesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/buyer'
+    | '/how-it-works'
+    | '/login'
+    | '/pending-approval'
+    | '/register'
+    | '/admin/dashboard'
+    | '/admin/negotiations'
+    | '/admin/users'
+    | '/auctions/$id'
+    | '/buyer/bids'
+    | '/buyer/dashboard'
+    | '/buyer/negotiations'
+    | '/buyer/won'
+    | '/auctions/'
+    | '/admin/auctions/$id'
+    | '/admin/auctions/new'
+    | '/admin/vehicles/new'
+    | '/admin/auctions/'
+    | '/admin/vehicles/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/buyer'
+    | '/how-it-works'
+    | '/login'
+    | '/pending-approval'
+    | '/register'
+    | '/admin/dashboard'
+    | '/admin/negotiations'
+    | '/admin/users'
+    | '/auctions/$id'
+    | '/buyer/bids'
+    | '/buyer/dashboard'
+    | '/buyer/negotiations'
+    | '/buyer/won'
+    | '/auctions'
+    | '/admin/auctions/$id'
+    | '/admin/auctions/new'
+    | '/admin/vehicles/new'
+    | '/admin/auctions'
+    | '/admin/vehicles'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/buyer'
+    | '/how-it-works'
+    | '/login'
+    | '/pending-approval'
+    | '/register'
+    | '/admin/dashboard'
+    | '/admin/negotiations'
+    | '/admin/users'
+    | '/auctions/$id'
+    | '/buyer/bids'
+    | '/buyer/dashboard'
+    | '/buyer/negotiations'
+    | '/buyer/won'
+    | '/auctions/'
+    | '/admin/auctions/$id'
+    | '/admin/auctions/new'
+    | '/admin/vehicles/new'
+    | '/admin/auctions/'
+    | '/admin/vehicles/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  BuyerRoute: typeof BuyerRouteWithChildren
+  HowItWorksRoute: typeof HowItWorksRoute
+  LoginRoute: typeof LoginRoute
+  PendingApprovalRoute: typeof PendingApprovalRoute
+  RegisterRoute: typeof RegisterRoute
+  AuctionsIdRoute: typeof AuctionsIdRoute
+  AuctionsIndexRoute: typeof AuctionsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pending-approval': {
+      id: '/pending-approval'
+      path: '/pending-approval'
+      fullPath: '/pending-approval'
+      preLoaderRoute: typeof PendingApprovalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buyer': {
+      id: '/buyer'
+      path: '/buyer'
+      fullPath: '/buyer'
+      preLoaderRoute: typeof BuyerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +342,157 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auctions/': {
+      id: '/auctions/'
+      path: '/auctions'
+      fullPath: '/auctions/'
+      preLoaderRoute: typeof AuctionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buyer/won': {
+      id: '/buyer/won'
+      path: '/won'
+      fullPath: '/buyer/won'
+      preLoaderRoute: typeof BuyerWonRouteImport
+      parentRoute: typeof BuyerRoute
+    }
+    '/buyer/negotiations': {
+      id: '/buyer/negotiations'
+      path: '/negotiations'
+      fullPath: '/buyer/negotiations'
+      preLoaderRoute: typeof BuyerNegotiationsRouteImport
+      parentRoute: typeof BuyerRoute
+    }
+    '/buyer/dashboard': {
+      id: '/buyer/dashboard'
+      path: '/dashboard'
+      fullPath: '/buyer/dashboard'
+      preLoaderRoute: typeof BuyerDashboardRouteImport
+      parentRoute: typeof BuyerRoute
+    }
+    '/buyer/bids': {
+      id: '/buyer/bids'
+      path: '/bids'
+      fullPath: '/buyer/bids'
+      preLoaderRoute: typeof BuyerBidsRouteImport
+      parentRoute: typeof BuyerRoute
+    }
+    '/auctions/$id': {
+      id: '/auctions/$id'
+      path: '/auctions/$id'
+      fullPath: '/auctions/$id'
+      preLoaderRoute: typeof AuctionsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/negotiations': {
+      id: '/admin/negotiations'
+      path: '/negotiations'
+      fullPath: '/admin/negotiations'
+      preLoaderRoute: typeof AdminNegotiationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/vehicles/': {
+      id: '/admin/vehicles/'
+      path: '/vehicles'
+      fullPath: '/admin/vehicles/'
+      preLoaderRoute: typeof AdminVehiclesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/auctions/': {
+      id: '/admin/auctions/'
+      path: '/auctions'
+      fullPath: '/admin/auctions/'
+      preLoaderRoute: typeof AdminAuctionsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/vehicles/new': {
+      id: '/admin/vehicles/new'
+      path: '/vehicles/new'
+      fullPath: '/admin/vehicles/new'
+      preLoaderRoute: typeof AdminVehiclesNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/auctions/new': {
+      id: '/admin/auctions/new'
+      path: '/auctions/new'
+      fullPath: '/admin/auctions/new'
+      preLoaderRoute: typeof AdminAuctionsNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/auctions/$id': {
+      id: '/admin/auctions/$id'
+      path: '/auctions/$id'
+      fullPath: '/admin/auctions/$id'
+      preLoaderRoute: typeof AdminAuctionsIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminNegotiationsRoute: typeof AdminNegotiationsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminAuctionsIdRoute: typeof AdminAuctionsIdRoute
+  AdminAuctionsNewRoute: typeof AdminAuctionsNewRoute
+  AdminVehiclesNewRoute: typeof AdminVehiclesNewRoute
+  AdminAuctionsIndexRoute: typeof AdminAuctionsIndexRoute
+  AdminVehiclesIndexRoute: typeof AdminVehiclesIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminNegotiationsRoute: AdminNegotiationsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminAuctionsIdRoute: AdminAuctionsIdRoute,
+  AdminAuctionsNewRoute: AdminAuctionsNewRoute,
+  AdminVehiclesNewRoute: AdminVehiclesNewRoute,
+  AdminAuctionsIndexRoute: AdminAuctionsIndexRoute,
+  AdminVehiclesIndexRoute: AdminVehiclesIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface BuyerRouteChildren {
+  BuyerBidsRoute: typeof BuyerBidsRoute
+  BuyerDashboardRoute: typeof BuyerDashboardRoute
+  BuyerNegotiationsRoute: typeof BuyerNegotiationsRoute
+  BuyerWonRoute: typeof BuyerWonRoute
+}
+
+const BuyerRouteChildren: BuyerRouteChildren = {
+  BuyerBidsRoute: BuyerBidsRoute,
+  BuyerDashboardRoute: BuyerDashboardRoute,
+  BuyerNegotiationsRoute: BuyerNegotiationsRoute,
+  BuyerWonRoute: BuyerWonRoute,
+}
+
+const BuyerRouteWithChildren = BuyerRoute._addFileChildren(BuyerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  BuyerRoute: BuyerRouteWithChildren,
+  HowItWorksRoute: HowItWorksRoute,
+  LoginRoute: LoginRoute,
+  PendingApprovalRoute: PendingApprovalRoute,
+  RegisterRoute: RegisterRoute,
+  AuctionsIdRoute: AuctionsIdRoute,
+  AuctionsIndexRoute: AuctionsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
