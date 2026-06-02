@@ -120,7 +120,7 @@ function AuctionDetail() {
                   Serviços adicionais (opcional)
                 </h3>
                 <ul className="divide-y divide-border">
-                  {vehicle.additionalServices.map((s) => (
+                  {vehicle.additionalServices.map((s: { name: string; price: number }) => (
                     <li key={s.name} className="flex items-center justify-between py-3 text-sm">
                       <span className="font-medium">{s.name}</span>
                       <span className="font-mono font-bold">{formatEUR(s.price)}</span>
