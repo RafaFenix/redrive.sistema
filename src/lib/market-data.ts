@@ -4,6 +4,8 @@ export type VehicleStatus = "draft" | "active" | "sold" | "archived";
 export type AuctionStatus = "scheduled" | "active" | "ended" | "cancelled";
 export type AuctionMode = "standard" | "blind";
 export type BidStatus = "active" | "outbid" | "won" | "cancelled";
+export type NegotiationStatus = "open" | "accepted" | "rejected" | "expired";
+export type NegotiationActor = "admin" | "buyer";
 
 export interface Vehicle {
   id: string;
@@ -64,6 +66,35 @@ export type BuyerBid = Bid & {
   auction?: Auction;
 };
 
+export interface NegotiationRound {
+  id: string;
+  negotiationId: string;
+  round: number;
+  initiatedBy: NegotiationActor;
+  amount: number;
+  message: string;
+  createdAt: string;
+}
+
+export interface Negotiation {
+  id: string;
+  auctionId: string;
+  buyerId: string;
+  status: NegotiationStatus;
+  maxRounds: number;
+  expiresAt: string;
+  acceptedAmount: number | null;
+  createdAt: string;
+  updatedAt: string;
+  rounds: NegotiationRound[];
+  auction?: Auction;
+  buyer?: {
+    id: string;
+    companyName: string;
+    contactName: string;
+  };
+}
+
 type VehicleRow = {
   id: string;
   status: VehicleStatus;
@@ -115,6 +146,28 @@ type BidRow = {
   amount: number;
   status: BidStatus;
   is_buy_now: boolean;
+  created_at: string;
+};
+
+type NegotiationRow = {
+  id: string;
+  auction_id: string;
+  buyer_id: string;
+  status: NegotiationStatus;
+  max_rounds: number;
+  expires_at: string;
+  accepted_amount: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type NegotiationRoundRow = {
+  id: string;
+  negotiation_id: string;
+  round_number: number;
+  initiated_by: NegotiationActor;
+  amount: number;
+  message: string | null;
   created_at: string;
 };
 
@@ -202,6 +255,32 @@ export function mapBid(row: BidRow, index: number, bidderHint?: string): Bid {
     status: row.status,
     isBuyNow: row.is_buy_now,
     createdAt: row.created_at,
+  };
+}
+
+export function mapNegotiationRound(row: NegotiationRoundRow): NegotiationRound {
+  return {
+    id: row.id,
+    negotiationId: row.negotiation_id,
+    round: row.round_number,
+    initiatedBy: row.initiated_by,
+    amount: row.amount,
+    message: row.message ?? "",
+    createdAt: row.created_at,
+  };
+}
+
+export function mapNegotiation(row: NegotiationRow): Omit<Negotiation, "rounds"> {
+  return {
+    id: row.id,
+    auctionId: row.auction_id,
+    buyerId: row.buyer_id,
+    status: row.status,
+    maxRounds: row.max_rounds,
+    expiresAt: row.expires_at,
+    acceptedAmount: row.accepted_amount,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -461,6 +540,177 @@ export async function listBuyerWonAuctions() {
   return bids
     .filter((bid) => bid.status === "won" && bid.auction)
     .map((bid) => ({ bid, auction: bid.auction! }));
+}
+
+async function listNegotiations({ admin }: { admin: boolean }): Promise<Negotiation[]> {
+  const supabase = getSupabaseClient();
+  const query = supabase
+    .from("negotiations")
+    .select(
+      "id,auction_id,buyer_id,status,max_rounds,expires_at,accepted_amount,created_at,updated_at",
+    )
+    .order("updated_at", { ascending: false });
+
+  if (!admin) {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) throw userError;
+    if (!user) return [];
+
+    query.eq("buyer_id", user.id);
+  }
+
+  const { data: negotiationRows, error: negotiationsError } = await query;
+  if (negotiationsError) throw negotiationsError;
+  if (!negotiationRows?.length) return [];
+
+  const negotiations = (negotiationRows ?? []) as NegotiationRow[];
+  const negotiationIds = negotiations.map((negotiation) => negotiation.id);
+  const auctionIds = [...new Set(negotiations.map((negotiation) => negotiation.auction_id))];
+  const buyerIds = [...new Set(negotiations.map((negotiation) => negotiation.buyer_id))];
+
+  const [
+    { data: roundRows, error: roundsError },
+    { data: auctionRows, error: auctionsError },
+    { data: vehicleRows, error: vehiclesError },
+    { data: profileRows, error: profilesError },
+  ] = await Promise.all([
+    supabase
+      .from("negotiation_rounds")
+      .select("id,negotiation_id,round_number,initiated_by,amount,message,created_at")
+      .in("negotiation_id", negotiationIds)
+      .order("round_number", { ascending: true }),
+    admin
+      ? supabase
+          .from("auctions")
+          .select(
+            "id,lot_number,vehicle_id,status,mode,starting_price,reserve_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count",
+          )
+          .in("id", auctionIds)
+      : supabase
+          .from("public_auctions")
+          .select(
+            "id,lot_number,vehicle_id,status,mode,starting_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count,reserve_met",
+          )
+          .in("id", auctionIds),
+    admin
+      ? supabase
+          .from("vehicles")
+          .select(
+            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          )
+      : supabase
+          .from("public_vehicles")
+          .select(
+            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          ),
+    admin
+      ? supabase.from("profiles").select("id,company_name,contact_name").in("id", buyerIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (roundsError) throw roundsError;
+  if (auctionsError) throw auctionsError;
+  if (vehiclesError) throw vehiclesError;
+  if (profilesError) throw profilesError;
+
+  const roundsByNegotiation = ((roundRows ?? []) as NegotiationRoundRow[]).reduce<
+    Record<string, NegotiationRound[]>
+  >((acc, row) => {
+    acc[row.negotiation_id] = [...(acc[row.negotiation_id] ?? []), mapNegotiationRound(row)];
+    return acc;
+  }, {});
+
+  const vehiclesById = new Map(
+    ((vehicleRows ?? []) as VehicleRow[]).map((row) => [row.id, mapVehicle(row)]),
+  );
+  const auctionsById = new Map(
+    ((auctionRows ?? []) as AuctionRow[]).map((row) => [
+      row.id,
+      { ...mapAuction(row), vehicle: vehiclesById.get(row.vehicle_id) },
+    ]),
+  );
+  const buyersById = new Map(
+    (profileRows ?? []).map((profile) => [
+      profile.id as string,
+      {
+        id: profile.id as string,
+        companyName: (profile.company_name as string) || "Comprador",
+        contactName: (profile.contact_name as string) || "",
+      },
+    ]),
+  );
+
+  return negotiations.map((row) => ({
+    ...mapNegotiation(row),
+    rounds: roundsByNegotiation[row.id] ?? [],
+    auction: auctionsById.get(row.auction_id),
+    buyer: buyersById.get(row.buyer_id),
+  }));
+}
+
+export function listBuyerNegotiations() {
+  return listNegotiations({ admin: false });
+}
+
+export function listAdminNegotiations() {
+  return listNegotiations({ admin: true });
+}
+
+export async function openAuctionNegotiation({
+  auctionId,
+  buyerId,
+  amount,
+  message,
+}: {
+  auctionId: string;
+  buyerId: string;
+  amount: number;
+  message?: string;
+}) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.rpc("open_negotiation", {
+    target_auction_id: auctionId,
+    target_buyer_id: buyerId,
+    offer_amount: amount,
+    offer_message: message ?? null,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
+export async function submitNegotiationRound({
+  negotiationId,
+  amount,
+  message,
+}: {
+  negotiationId: string;
+  amount: number;
+  message?: string;
+}) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.rpc("submit_negotiation_round", {
+    target_negotiation_id: negotiationId,
+    offer_amount: amount,
+    offer_message: message ?? null,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
+export async function acceptNegotiationOffer(negotiationId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.rpc("accept_negotiation_offer", {
+    target_negotiation_id: negotiationId,
+  });
+
+  if (error) throw error;
+  return data as string;
 }
 
 export function parseInteger(value: FormDataEntryValue | null): number | null {

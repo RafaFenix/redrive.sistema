@@ -1,5 +1,11 @@
 import { createFileRoute, notFound, Link, useRouter } from "@tanstack/react-router";
-import { cancelAuction, formatEUR, getAdminAuction } from "@/lib/market-data";
+import {
+  cancelAuction,
+  euroToCents,
+  formatEUR,
+  getAdminAuction,
+  openAuctionNegotiation,
+} from "@/lib/market-data";
 import { BidHistory } from "@/components/auction/BidHistory";
 import { AuctionTimer } from "@/components/auction/AuctionTimer";
 import { ReserveIndicator } from "@/components/auction/ReserveIndicator";
@@ -31,6 +37,38 @@ function AdminAuctionDetail() {
     } catch (error) {
       console.error(error);
       toast.error("Não foi possível cancelar o leilão.");
+    }
+  }
+
+  async function handleOpenNegotiation(bidderId: string, fallbackAmount: number) {
+    const value = window.prompt(
+      "Oferta inicial para negociação (€):",
+      String(Math.round(fallbackAmount / 100)),
+    );
+    if (value === null) return;
+
+    const amount = euroToCents(value);
+    if (!amount) {
+      toast.error("Introduza uma proposta válida.");
+      return;
+    }
+
+    const message = window.prompt("Mensagem para o comprador (opcional):") ?? undefined;
+
+    try {
+      await openAuctionNegotiation({
+        auctionId: auction.id,
+        buyerId: bidderId,
+        amount,
+        message,
+      });
+      toast.success("Negociação aberta.");
+      await router.invalidate();
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível abrir a negociação.", {
+        description: error instanceof Error ? error.message : undefined,
+      });
     }
   }
 
@@ -98,6 +136,7 @@ function AdminAuctionDetail() {
                   <th className="py-2">Empresa</th>
                   <th className="py-2">Valor</th>
                   <th className="py-2">Estado</th>
+                  <th className="py-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -115,11 +154,19 @@ function AdminAuctionDetail() {
                         {b.status}
                       </span>
                     </td>
+                    <td className="py-2 text-right">
+                      <button
+                        onClick={() => void handleOpenNegotiation(b.bidderId, b.amount)}
+                        className="text-[10px] font-bold uppercase text-primary underline-offset-4 hover:underline"
+                      >
+                        Negociar
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {bidList.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground">
                       Sem lances ainda.
                     </td>
                   </tr>
