@@ -9,12 +9,20 @@ function readSupabaseConfig(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+function getViteEnvValue(key: string) {
+  const viteEnv = import.meta.env as Record<string, unknown> | undefined;
+  return viteEnv?.[key];
+}
+
 export function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
 
-  const supabaseUrl = readSupabaseConfig(import.meta.env.VITE_SUPABASE_URL, FALLBACK_SUPABASE_URL);
+  const supabaseUrl = readSupabaseConfig(
+    getViteEnvValue("VITE_SUPABASE_URL"),
+    FALLBACK_SUPABASE_URL,
+  );
   const publishableKey = readSupabaseConfig(
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    getViteEnvValue("VITE_SUPABASE_PUBLISHABLE_KEY"),
     FALLBACK_SUPABASE_PUBLISHABLE_KEY,
   );
 

@@ -1,18 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
-import { listPublicAuctions } from "@/lib/market-data";
+import { Auction, listPublicAuctions } from "@/lib/market-data";
 
 export const Route = createFileRoute("/auctions/")({
-  loader: async () => {
-    try {
-      return await listPublicAuctions();
-    } catch (error) {
-      console.error("Failed to load public auctions catalog", error);
-      return [];
-    }
-  },
   head: () => ({
     meta: [
       { title: "Leilões ativos — ReDrive" },
@@ -26,10 +18,23 @@ export const Route = createFileRoute("/auctions/")({
 });
 
 function AuctionsList() {
-  const auctions = Route.useLoaderData();
+  const [auctions, setAuctions] = useState<Auction[]>([]);
   const [make, setMake] = useState<string>("all");
   const [fuel, setFuel] = useState<string>("all");
   const [status, setStatus] = useState<string>("active");
+
+  useEffect(() => {
+    async function loadAuctions() {
+      try {
+        const data = await listPublicAuctions();
+        setAuctions(data);
+      } catch (error) {
+        console.error("Failed to load public auctions catalog", error);
+      }
+    }
+
+    void loadAuctions();
+  }, []);
 
   const makes = useMemo(() => {
     const vehicleMakes = new Set(auctions.map((auction) => auction.vehicle?.make).filter(Boolean));

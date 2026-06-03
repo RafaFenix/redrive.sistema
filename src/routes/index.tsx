@@ -1,18 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
-import { listPublicAuctions } from "@/lib/market-data";
+import { Auction, listPublicAuctions } from "@/lib/market-data";
 import { ArrowRight, ShieldCheck, Gavel, Truck } from "lucide-react";
 
 export const Route = createFileRoute("/")({
-  loader: async () => {
-    try {
-      return await listPublicAuctions();
-    } catch (error) {
-      console.error("Failed to load public auctions for landing page", error);
-      return [];
-    }
-  },
   head: () => ({
     meta: [
       { title: "ReDrive — Leilão Automóvel B2B" },
@@ -32,7 +25,21 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const auctions = Route.useLoaderData();
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+
+  useEffect(() => {
+    async function loadAuctions() {
+      try {
+        const data = await listPublicAuctions();
+        setAuctions(data);
+      } catch (error) {
+        console.error("Failed to load public auctions for landing page", error);
+      }
+    }
+
+    void loadAuctions();
+  }, []);
+
   const featured = auctions.filter((a) => a.status === "active").slice(0, 6);
   const endingSoon = [...featured]
     .sort((a, b) => new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime())
