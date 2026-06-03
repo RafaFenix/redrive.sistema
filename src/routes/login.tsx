@@ -1,6 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { toast } from "sonner";
+import { useState } from "react";
+import { getCurrentAccess, getDefaultAuthenticatedPath } from "@/lib/auth-client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Entrar — ReDrive" }] }),
@@ -8,10 +11,35 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  function submit(e: React.FormEvent) {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    toast.success("Demo — autenticação ainda não está ligada.");
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      const access = await getCurrentAccess();
+      toast.success("Sessão iniciada.");
+      await navigate({ to: getDefaultAuthenticatedPath(access) });
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível iniciar sessão.", {
+        description: "Confirme o email e a palavra-passe.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
+
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
@@ -23,40 +51,47 @@ function LoginPage() {
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Entrar</h1>
         </div>
         <form onSubmit={submit} className="space-y-4 border border-border bg-card p-6">
-          <Field label="Email empresarial" type="email" required />
-          <Field label="Palavra-passe" type="password" required />
-          <button type="submit" className="w-full bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90">
-            Entrar
+          <Field label="Email empresarial" name="email" type="email" required />
+          <Field label="Palavra-passe" name="password" type="password" required />
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-primary py-3 text-sm font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? "A entrar..." : "Entrar"}
           </button>
           <div className="flex justify-between pt-2 text-xs">
             <Link to="/register" className="text-muted-foreground hover:text-foreground">
               Não tem conta? Registar →
             </Link>
-            <a href="#" className="text-muted-foreground hover:text-foreground">Recuperar palavra-passe</a>
+            <Link to="/reset-password" className="text-muted-foreground hover:text-foreground">
+              Recuperar palavra-passe
+            </Link>
           </div>
         </form>
-
-        <div className="grid grid-cols-2 gap-2 border border-dashed border-border bg-card p-4 text-xs">
-          <span className="col-span-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Atalhos demo</span>
-          <Link to="/buyer/dashboard" className="border border-border bg-background px-3 py-2 text-center font-medium hover:border-foreground">
-            Entrar como comprador
-          </Link>
-          <Link to="/admin/dashboard" className="border border-border bg-background px-3 py-2 text-center font-medium hover:border-foreground">
-            Entrar como admin
-          </Link>
-        </div>
       </main>
     </div>
   );
 }
 
-function Field({ label, type = "text", required }: { label: string; type?: string; required?: boolean }) {
+function Field({
+  label,
+  name,
+  type = "text",
+  required,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  required?: boolean;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
         {label}
       </span>
       <input
+        name={name}
         type={type}
         required={required}
         className="w-full border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"

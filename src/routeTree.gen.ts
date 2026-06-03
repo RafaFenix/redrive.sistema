@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PendingApprovalRouteImport } from './routes/pending-approval'
 import { Route as LoginRouteImport } from './routes/login'
@@ -31,6 +32,11 @@ import { Route as AdminVehiclesNewRouteImport } from './routes/admin.vehicles.ne
 import { Route as AdminAuctionsNewRouteImport } from './routes/admin.auctions.new'
 import { Route as AdminAuctionsIdRouteImport } from './routes/admin.auctions.$id'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pending-approval'
     | '/register'
+    | '/reset-password'
     | '/admin/dashboard'
     | '/admin/negotiations'
     | '/admin/users'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pending-approval'
     | '/register'
+    | '/reset-password'
     | '/admin/dashboard'
     | '/admin/negotiations'
     | '/admin/users'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pending-approval'
     | '/register'
+    | '/reset-password'
     | '/admin/dashboard'
     | '/admin/negotiations'
     | '/admin/users'
@@ -287,12 +299,20 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PendingApprovalRoute: typeof PendingApprovalRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   AuctionsIdRoute: typeof AuctionsIdRoute
   AuctionsIndexRoute: typeof AuctionsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -491,9 +511,20 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PendingApprovalRoute: PendingApprovalRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   AuctionsIdRoute: AuctionsIdRoute,
   AuctionsIndexRoute: AuctionsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
