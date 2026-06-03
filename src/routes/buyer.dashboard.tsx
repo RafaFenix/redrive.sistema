@@ -1,6 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BuyerBid, formatEUR, listBuyerBids } from "@/lib/market-data";
+import {
+  BuyerBid,
+  getWatchlistAuctionIds,
+  formatEUR,
+  listBuyerBids,
+  listBuyerNegotiations,
+  listBuyerOrders,
+} from "@/lib/market-data";
 import { AuctionTimer } from "@/components/auction/AuctionTimer";
 import { Gavel, Trophy, Handshake, Eye } from "lucide-react";
 import { toast } from "sonner";
@@ -12,13 +19,27 @@ export const Route = createFileRoute("/buyer/dashboard")({
 
 function BuyerDashboard() {
   const [myBids, setMyBids] = useState<BuyerBid[]>([]);
+  const [wonCount, setWonCount] = useState(0);
+  const [negotiationCount, setNegotiationCount] = useState(0);
+  const [watchlistCount, setWatchlistCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadBids() {
       try {
-        const data = await listBuyerBids();
-        setMyBids(data);
+        const [bids, orders, negotiations, watchlist] = await Promise.all([
+          listBuyerBids(),
+          listBuyerOrders(),
+          listBuyerNegotiations(),
+          getWatchlistAuctionIds(),
+        ]);
+
+        setMyBids(bids);
+        setWonCount(orders.length);
+        setNegotiationCount(
+          negotiations.filter((negotiation) => negotiation.status === "open").length,
+        );
+        setWatchlistCount(watchlist.size);
       } catch (error) {
         console.error(error);
         toast.error("Não foi possível carregar o dashboard.");
@@ -31,7 +52,6 @@ function BuyerDashboard() {
   }, []);
 
   const activeBids = myBids.filter((bid) => bid.status === "active");
-  const wonBids = myBids.filter((bid) => bid.status === "won");
   const visibleActiveBids = activeBids.slice(0, 8);
 
   return (
@@ -53,9 +73,9 @@ function BuyerDashboard() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <KPI icon={Gavel} label="Lances ativos" value={activeBids.length} accent="text-primary" />
-        <KPI icon={Trophy} label="Leilões ganhos" value={wonBids.length} accent="text-success" />
-        <KPI icon={Handshake} label="Em negociação" value={0} />
-        <KPI icon={Eye} label="A observar" value={0} />
+        <KPI icon={Trophy} label="Leilões ganhos" value={wonCount} accent="text-success" />
+        <KPI icon={Handshake} label="Em negociação" value={negotiationCount} />
+        <KPI icon={Eye} label="A observar" value={watchlistCount} />
       </div>
 
       <div className="mt-8">

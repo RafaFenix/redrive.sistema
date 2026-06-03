@@ -6,6 +6,15 @@ export type AuctionMode = "standard" | "blind";
 export type BidStatus = "active" | "outbid" | "won" | "cancelled";
 export type NegotiationStatus = "open" | "accepted" | "rejected" | "expired";
 export type NegotiationActor = "admin" | "buyer";
+export type OrderStatus = "pending_payment" | "paid" | "cancelled" | "completed";
+export type DeliveryStatus =
+  | "pending"
+  | "awaiting_payment"
+  | "documentation"
+  | "in_transit"
+  | "ready_for_pickup"
+  | "delivered"
+  | "cancelled";
 export type NotificationType =
   | "account_approved"
   | "account_rejected"
@@ -109,6 +118,23 @@ export interface Negotiation {
   };
 }
 
+export interface BuyerOrder {
+  id: string;
+  auctionId: string;
+  buyerId: string;
+  vehicleId: string;
+  winningBidId: string | null;
+  amount: number;
+  status: OrderStatus;
+  deliveryStatus: DeliveryStatus;
+  depositAmount: number;
+  deliveryNotes: string;
+  createdAt: string;
+  updatedAt: string;
+  auction?: Auction;
+  vehicle?: Vehicle;
+}
+
 export interface AppNotification {
   id: string;
   type: NotificationType;
@@ -203,6 +229,21 @@ type NotificationRow = {
   data: Record<string, unknown> | null;
   read_at: string | null;
   created_at: string;
+};
+
+type OrderRow = {
+  id: string;
+  auction_id: string;
+  buyer_id: string;
+  vehicle_id: string;
+  winning_bid_id: string | null;
+  amount: number;
+  status: OrderStatus;
+  delivery_status: DeliveryStatus;
+  deposit_amount: number;
+  delivery_notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export function formatEUR(cents: number): string {
@@ -328,6 +369,41 @@ export function mapNotification(row: NotificationRow): AppNotification {
     readAt: row.read_at,
     createdAt: row.created_at,
   };
+}
+
+export function mapOrder(row: OrderRow): BuyerOrder {
+  return {
+    id: row.id,
+    auctionId: row.auction_id,
+    buyerId: row.buyer_id,
+    vehicleId: row.vehicle_id,
+    winningBidId: row.winning_bid_id,
+    amount: row.amount,
+    status: row.status,
+    deliveryStatus: row.delivery_status,
+    depositAmount: row.deposit_amount,
+    deliveryNotes: row.delivery_notes ?? "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function readStringData(data: Record<string, unknown>, key: string) {
+  const value = data[key];
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+export function resolveNotificationHref(notification: AppNotification) {
+  const orderId = readStringData(notification.data, "order_id");
+  if (orderId) return `/buyer/won/${orderId}`;
+
+  const negotiationId = readStringData(notification.data, "negotiation_id");
+  if (negotiationId) return "/buyer/negotiations";
+
+  const auctionId = readStringData(notification.data, "auction_id");
+  if (auctionId) return `/auctions/${auctionId}`;
+
+  return null;
 }
 
 export async function listAdminVehicles() {
@@ -586,6 +662,88 @@ export async function listBuyerWonAuctions() {
   return bids
     .filter((bid) => bid.status === "won" && bid.auction)
     .map((bid) => ({ bid, auction: bid.auction! }));
+}
+
+async function hydrateBuyerOrders(orderRows: OrderRow[]): Promise<BuyerOrder[]> {
+  if (!orderRows.length) return [];
+
+  const supabase = getSupabaseClient();
+  const auctionIds = [...new Set(orderRows.map((order) => order.auction_id))];
+  const vehicleIds = [...new Set(orderRows.map((order) => order.vehicle_id))];
+
+  const [{ data: auctionRows, error: auctionsError }, { data: vehicleRows, error: vehiclesError }] =
+    await Promise.all([
+      supabase
+        .from("public_auctions")
+        .select(
+          "id,lot_number,vehicle_id,status,mode,starting_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count,reserve_met",
+        )
+        .in("id", auctionIds),
+      supabase
+        .from("public_vehicles")
+        .select(
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+        )
+        .in("id", vehicleIds),
+    ]);
+
+  if (auctionsError) throw auctionsError;
+  if (vehiclesError) throw vehiclesError;
+
+  const vehiclesById = new Map(
+    ((vehicleRows ?? []) as VehicleRow[]).map((row) => [row.id, mapVehicle(row)]),
+  );
+  const auctionsById = new Map(
+    ((auctionRows ?? []) as AuctionRow[]).map((row) => [
+      row.id,
+      { ...mapAuction(row), vehicle: vehiclesById.get(row.vehicle_id) },
+    ]),
+  );
+
+  return orderRows.map((row) => ({
+    ...mapOrder(row),
+    auction: auctionsById.get(row.auction_id),
+    vehicle: vehiclesById.get(row.vehicle_id),
+  }));
+}
+
+export async function listBuyerOrders(): Promise<BuyerOrder[]> {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id,auction_id,buyer_id,vehicle_id,winning_bid_id,amount,status,delivery_status,deposit_amount,delivery_notes,created_at,updated_at",
+    )
+    .eq("buyer_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return hydrateBuyerOrders((data ?? []) as OrderRow[]);
+}
+
+export async function getBuyerOrder(orderId: string): Promise<BuyerOrder | null> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id,auction_id,buyer_id,vehicle_id,winning_bid_id,amount,status,delivery_status,deposit_amount,delivery_notes,created_at,updated_at",
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const [order] = await hydrateBuyerOrders([data as OrderRow]);
+  return order ?? null;
 }
 
 async function listNegotiations({ admin }: { admin: boolean }): Promise<Negotiation[]> {

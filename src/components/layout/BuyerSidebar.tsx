@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Gavel, Trophy, Handshake, LogOut } from "lucide-react";
+import { LayoutDashboard, Gavel, Trophy, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { SidebarUserCard } from "@/components/layout/SidebarUserCard";
 
 const items = [
   { title: "Dashboard", url: "/buyer/dashboard", icon: LayoutDashboard },
@@ -49,18 +50,7 @@ export function BuyerSidebar() {
         >
           Ver leilões
         </Link>
-        <div className="flex items-center gap-3 rounded-sm bg-muted p-2">
-          <div className="grid size-8 place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-            JM
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold">Auto Marques</p>
-            <p className="font-mono text-[10px] uppercase text-muted-foreground">Aprovado</p>
-          </div>
-          <Link to="/login" className="text-muted-foreground hover:text-foreground">
-            <LogOut className="size-3.5" />
-          </Link>
-        </div>
+        <SidebarUserCard roleLabel="Aprovado" />
         <div className="flex justify-end">
           <NotificationBell />
         </div>

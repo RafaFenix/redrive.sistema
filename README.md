@@ -30,10 +30,11 @@
 > **Fase: MVP funcional ligado ao Supabase**
 >
 > Auth, schema/RLS, aprovação de utilizadores, catálogo, viaturas, leilões, lances, buy now, negociações,
-> notificações e watchlist já usam Supabase real. O detalhe de leilão recebe atualizações via Realtime
-> para lances/preço, e as notificações são atualizadas em tempo real na área autenticada.
+> notificações, watchlist e adjudicações já usam Supabase real. O ciclo de leilão tem Realtime,
+> anti-sniping nos últimos 2 minutos e jobs `pg_cron` para ativar/fechar leilões, abrir negociações
+> quando a reserva não é atingida e expirar negociações.
 >
-> Ainda faltam Storage completo, jobs/cron de ciclo de leilão e algumas melhorias de produto listadas no checklist.
+> Ainda faltam Storage completo, Stripe/emails e algumas melhorias de produto pós-MVP listadas no checklist.
 
 ---
 
@@ -329,20 +330,20 @@ redrive/
   - [ ] Signed URLs para `vehicle-documents`
   - [ ] Gestão completa do bucket `trade-registry`
 
-- [ ] **A.6 — Cron**
-  - [ ] `close-auctions` / `activate-auctions`
-  - [ ] `notify-watchlist-1h`
-  - [ ] `expire-negotiations`
+- [x] **A.6 — Cron**
+  - [x] `close-auctions` / `activate-auctions` via `pg_cron`
+  - [x] `notify-watchlist-1h`
+  - [x] `expire-negotiations`
 
 - [ ] **A.8 — Melhorias de produto**
   - [x] `NotificationBell` componente (dropdown de notificações)
   - [x] `WatchlistButton` (estrela nos cards)
   - [ ] `MarketPriceHint` (comparação com preço de mercado)
   - [ ] `DocumentsList` (relatórios de danos, peritagens)
-  - [ ] Página `/buyer/won/$id` com timeline de `delivery_status`
+  - [x] Página `/buyer/won/$id` com timeline de `delivery_status`
   - [ ] Filtros completos no catálogo: marca, modelo, preço, ano, quilometragem, origem, estado, transmissão, combustível
-  - [ ] Timer estende nos últimos 2 min
-  - [ ] Cron fecha leilão e cria `order` ou `negotiation`
+  - [x] Timer estende nos últimos 2 min
+  - [x] Cron fecha leilão e cria `order` ou `negotiation`
   - [x] Notificações aparecem em tempo real
 
 ---
@@ -377,7 +378,7 @@ redrive/
 
 ---
 
-## 🧪 Testar o Ciclo Crítico (quando Fase A estiver pronta)
+## 🧪 Testar o Ciclo Crítico
 
 1. **Registo:** Novo buyer acede a `/register`, preenche dados da empresa → recebe e-mail de confirmação.
 2. **Aprovação:** Admin vai a `/admin/users`, vê o novo registo em "Pendente", clica "Aprovar".
@@ -385,7 +386,7 @@ redrive/
 4. **Licitar:** Buyer entra num leilão ativo, clica no incremento → lance registado, aparece no histórico.
 5. **Realtime:** Abre o mesmo leilão noutro browser (incógnito) → vê o lance aparecer em tempo real.
 6. **Extensão:** Lance nos últimos 2 minutos → timer estende automaticamente.
-7. **Ganhar:** Espera o leilão terminar (ou simula via cron) → buyer vê em `/buyer/won`.
+7. **Ganhar:** Espera o leilão terminar (ou executa `select public.run_auction_lifecycle_jobs();`) → buyer vê em `/buyer/won` e `/buyer/won/$id`.
 8. **Negociar:** Se reserva não atingida, buyer recebe notificação para negociar em `/buyer/negotiations`.
 
 ---

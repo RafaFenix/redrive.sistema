@@ -9,6 +9,15 @@ export type CurrentAccess = {
   roles: AppRole[];
 };
 
+export type CurrentUserSummary = {
+  id: string;
+  email: string;
+  status: UserStatus;
+  companyName: string;
+  contactName: string;
+  roles: AppRole[];
+};
+
 export async function getCurrentAccess(): Promise<CurrentAccess> {
   const supabase = getSupabaseClient();
   const {
@@ -33,6 +42,45 @@ export async function getCurrentAccess(): Promise<CurrentAccess> {
     profile: profile as { status: UserStatus } | null,
     roles: (roleRows ?? []).map((row) => row.role as AppRole),
   };
+}
+
+export async function getCurrentUserSummary(): Promise<CurrentUserSummary | null> {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) return null;
+
+  const [{ data: profile, error: profileError }, { data: roleRows, error: rolesError }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("status,company_name,contact_name")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", user.id),
+    ]);
+
+  if (profileError) throw profileError;
+  if (rolesError) throw rolesError;
+
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    status: (profile?.status as UserStatus | undefined) ?? "pending",
+    companyName: (profile?.company_name as string | undefined) || "",
+    contactName: (profile?.contact_name as string | undefined) || "",
+    roles: (roleRows ?? []).map((row) => row.role as AppRole),
+  };
+}
+
+export async function signOut() {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
 }
 
 export function getDefaultAuthenticatedPath(access: CurrentAccess) {

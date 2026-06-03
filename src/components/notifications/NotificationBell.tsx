@@ -5,6 +5,7 @@ import {
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  resolveNotificationHref,
 } from "@/lib/market-data";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -101,6 +102,16 @@ export function NotificationBell() {
     }
   }
 
+  async function openNotification(notification: AppNotification) {
+    const href = resolveNotificationHref(notification);
+    await markRead(notification);
+    setIsOpen(false);
+
+    if (href) {
+      window.location.href = href;
+    }
+  }
+
   async function markAllRead() {
     try {
       await markAllNotificationsRead();
@@ -153,7 +164,7 @@ export function NotificationBell() {
                 <button
                   key={notification.id}
                   type="button"
-                  onClick={() => void markRead(notification)}
+                  onClick={() => void openNotification(notification)}
                   className={cn(
                     "block w-full border-b border-border p-3 text-left last:border-0 hover:bg-muted/50",
                     !notification.readAt && "bg-primary/5",

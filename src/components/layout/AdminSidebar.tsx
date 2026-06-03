@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Car, Gavel, Users, Handshake, LogOut } from "lucide-react";
+import { LayoutDashboard, Car, Gavel, Users, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { SidebarUserCard } from "@/components/layout/SidebarUserCard";
 
 const items = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
@@ -44,18 +45,7 @@ export function AdminSidebar() {
         })}
       </nav>
       <div className="space-y-2 border-t border-border p-3">
-        <div className="flex items-center gap-3 rounded-sm bg-muted p-2">
-          <div className="grid size-8 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
-            SM
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold">Sofia Marques</p>
-            <p className="font-mono text-[10px] uppercase text-muted-foreground">Admin</p>
-          </div>
-          <Link to="/login" className="text-muted-foreground hover:text-foreground">
-            <LogOut className="size-3.5" />
-          </Link>
-        </div>
+        <SidebarUserCard roleLabel="Admin" avatarClassName="bg-foreground text-background" />
         <div className="flex justify-end">
           <NotificationBell />
         </div>
