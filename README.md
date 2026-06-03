@@ -153,11 +153,10 @@ redrive/
 │   │   ├── ui/                    # shadcn/ui (40+ componentes)
 │   │   └── vehicle/               # VehicleCard, VehicleGallery
 │   │
-│   ├── hooks/
-│   │   └── use-mobile.tsx         # Hook para breakpoints mobile
-│   │
 │   ├── lib/
-│   │   ├── mock-data.ts           # Dados mock para demo visual
+│   │   ├── market-data.ts         # Queries/RPCs Supabase para leilões, lances e negociações
+│   │   ├── auth-client.ts         # Sessão, profile/status e roles
+│   │   ├── supabase/client.ts     # Cliente browser Supabase
 │   │   ├── utils.ts               # cn() e helpers
 │   │   ├── error-capture.ts       # Captura de erros SSR
 │   │   ├── error-page.ts          # Página de erro genérica
@@ -252,7 +251,7 @@ redrive/
 
 ## 📊 Checklist do MVP
 
-### ✅ Feito — Frontend Visual (Mock)
+### ✅ Feito — UI e Fluxos Principais
 
 - [x] Landing page com hero, estatísticas, leilões em destaque
 - [x] Catálogo de leilões (`/auctions`) com cards de viaturas
@@ -280,44 +279,43 @@ redrive/
   - [x] Gestão de negociações
 - [x] Design system "Terminal precision" completo
 - [x] 40+ componentes shadcn/ui configurados
-- [x] Mock data robusta com 8 viaturas, 8 leilões, 5 perfis, lances e negociações
 - [x] Rotas com meta tags (SEO) e type-safe routing
 - [x] Totalmente responsivo (mobile → desktop)
 
 ---
 
-### 🔲 Por fazer — Fase A: MVP Funcional Mínimo
+### ✅ Fase A — Backend funcional ligado
 
-> **Bloqueio:** Lovable Cloud (Supabase) precisa de ser ativado nas configurações do projeto.
+- [x] **A.1 — Schema + RLS**
+  - [x] Migration SQL com tabelas: `profiles`, `user_roles`, `vehicles`, `auctions`, `bids`, `orders`, `negotiations`, `negotiation_rounds`, `notifications`, `watchlist`
+  - [x] Enums de roles, estados, leilões, lances, negociações, entregas e notificações
+  - [x] Row Level Security (RLS), GRANTs e funções privadas de role/status
+  - [x] Views públicas: `public_vehicles`, `public_auctions` sem campos sensíveis
+  - [x] Trigger para criar `profile` + role buyer no signup
 
-- [ ] **A.1 — Schema + RLS**
-  - [ ] Migration SQL com tabelas: `profiles`, `user_roles`, `vehicles`, `auctions`, `bids`, `orders`, `negotiations`, `negotiation_rounds`, `notifications`, `watchlist`
-  - [ ] Enums: `user_role`, `user_status`, `vehicle_status`, `auction_status`, `auction_mode`, `bid_status`, `negotiation_status`, `delivery_status`, `notification_type`
-  - [ ] Row Level Security (RLS) em todas as tabelas
-  - [ ] GRANTs corretos (`authenticated`, `service_role`, `anon` onde aplicável)
-  - [ ] Função `has_role()` security definer
-  - [ ] Views públicas: `public_vehicles`, `public_auctions` (sem VIN, matrícula, preço de reserva)
-  - [ ] Trigger auto-criar `profile` com `status='pending'` no signup
+- [x] **A.2 — Auth**
+  - [x] Signup/login/reset password com Supabase Auth
+  - [x] Verificação de role/status nos layouts buyer/admin
+  - [x] Redirecionamento para `/pending-approval`
+  - [x] Bootstrap seguro do primeiro admin em `/setup-admin`
 
-- [ ] **A.2 — Auth**
-  - [ ] Email + password signup/login (Supabase Auth)
-  - [ ] Rota `_authenticated/` com gate de auth
-  - [ ] Verificação de role/status nos layouts buyer/admin
-  - [ ] Redirecionamento para `/pending-approval` quando `status='pending'`
-  - [ ] Rota `/reset-password`
+- [x] **A.3 — Ações transacionais**
+  - [x] `place_bid` com validação de comprador aprovado, leilão ativo, buy now e outbid
+  - [x] `approve_user` / `reject_user` / `suspend_user`
+  - [x] Criação de viaturas e leilões pelo admin
+  - [x] Cancelamento de leilão pelo admin
+  - [x] `open_negotiation`, `submit_negotiation_round`, `accept_negotiation_offer`
+  - [x] Aceitação de negociação cria `order`
 
-- [ ] **A.3 — Server Functions (createServerFn)**
-  - [ ] `placeBid` — validação completa (fundo suficiente, leilão ativo, não é dono, etc.)
-  - [ ] `placeBid` — extensão automática 2 minutos se lance nos últimos 2 min
-  - [ ] `placeBid` — outbid notification + broadcast realtime
-  - [ ] `buyNow` — encerrar leilão imediato
-  - [ ] `closeAuction` — adjudicar ou criar negociação
-  - [ ] `approveUser` / `rejectUser` / `suspendUser`
-  - [ ] `createVehicle` / `updateVehicle` (admin)
-  - [ ] `createAuction` / `cancelAuction` (admin)
-  - [ ] `addToWatchlist` / `removeFromWatchlist`
-  - [ ] `markNotificationRead`
-  - [ ] `submitCounterOffer` / `acceptOffer` / `rejectOffer` (negociações, max 5 rondas)
+- [x] **A.7 — Ligar Frontend ao Backend**
+  - [x] Substituir `mock-data.ts` por queries reais nas rotas funcionais
+  - [x] `BidPanel` chama `place_bid` real
+  - [x] Listagem com filtros funcionais no catálogo
+  - [x] Admin forms inserem na DB
+  - [x] Admin gere utilizadores, viaturas, leilões e negociações
+  - [x] Buyer vê dashboard, lances, ganhos e negociações reais
+
+### 🔲 Ainda por fazer
 
 - [ ] **A.4 — Realtime**
   - [ ] Canal `auction:{id}` — broadcast em cada lance
@@ -326,33 +324,22 @@ redrive/
   - [ ] Hook `useNotifications()`
 
 - [ ] **A.5 — Storage**
-  - [ ] Bucket `vehicle-photos` (público)
-  - [ ] Bucket `vehicle-documents` (privado, signed URLs)
-  - [ ] Bucket `trade-registry` (privado, apenas admin)
+  - [ ] Upload real para bucket `vehicle-photos`
+  - [ ] Signed URLs para `vehicle-documents`
+  - [ ] Gestão completa do bucket `trade-registry`
 
-- [ ] **A.6 — Cron (pg_cron)**
-  - [ ] `close-auctions` (cada minuto) → endpoint `/api/public/close-auctions`
-  - [ ] `activate-auctions` (cada minuto)
-  - [ ] `notify-watchlist-1h` (cada 5 min)
-  - [ ] `expire-negotiations` (diário)
-  - [ ] Rota `src/routes/api/public/close-auctions.ts` com verificação `CRON_SECRET`
+- [ ] **A.6 — Cron**
+  - [ ] `close-auctions` / `activate-auctions`
+  - [ ] `notify-watchlist-1h`
+  - [ ] `expire-negotiations`
 
-- [ ] **A.7 — Ligar Frontend ao Backend**
-  - [ ] Substituir `mock-data.ts` por queries reais (TanStack Query)
-  - [ ] `BidPanel` chama `placeBid` real
-  - [ ] Listagem com filtros funcionais (API)
-  - [ ] Admin forms inserem na DB
+- [ ] **A.8 — Melhorias de produto**
   - [ ] `NotificationBell` componente (dropdown de notificações)
   - [ ] `WatchlistButton` (estrela nos cards)
   - [ ] `MarketPriceHint` (comparação com preço de mercado)
   - [ ] `DocumentsList` (relatórios de danos, peritagens)
   - [ ] Página `/buyer/won/$id` com timeline de `delivery_status`
   - [ ] Filtros completos no catálogo: marca, modelo, preço, ano, quilometragem, origem, estado, transmissão, combustível
-
-- [ ] **A.8 — Critérios de Aceitação Fase A**
-  - [ ] Admin cria viatura + leilão
-  - [ ] Buyer regista, admin aprova, buyer licita
-  - [ ] Realtime: outro browser vê o lance aparecer
   - [ ] Timer estende nos últimos 2 min
   - [ ] Cron fecha leilão e cria `order` ou `negotiation`
   - [ ] Notificações aparecem em tempo real
