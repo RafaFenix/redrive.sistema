@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SetupAdminRouteImport } from './routes/setup-admin'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PendingApprovalRouteImport } from './routes/pending-approval'
@@ -32,6 +33,11 @@ import { Route as AdminVehiclesNewRouteImport } from './routes/admin.vehicles.ne
 import { Route as AdminAuctionsNewRouteImport } from './routes/admin.auctions.new'
 import { Route as AdminAuctionsIdRouteImport } from './routes/admin.auctions.$id'
 
+const SetupAdminRoute = SetupAdminRouteImport.update({
+  id: '/setup-admin',
+  path: '/setup-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/setup-admin': typeof SetupAdminRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/setup-admin': typeof SetupAdminRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/pending-approval': typeof PendingApprovalRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/setup-admin': typeof SetupAdminRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/reset-password'
+    | '/setup-admin'
     | '/admin/dashboard'
     | '/admin/negotiations'
     | '/admin/users'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/reset-password'
+    | '/setup-admin'
     | '/admin/dashboard'
     | '/admin/negotiations'
     | '/admin/users'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/pending-approval'
     | '/register'
     | '/reset-password'
+    | '/setup-admin'
     | '/admin/dashboard'
     | '/admin/negotiations'
     | '/admin/users'
@@ -300,12 +312,20 @@ export interface RootRouteChildren {
   PendingApprovalRoute: typeof PendingApprovalRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SetupAdminRoute: typeof SetupAdminRoute
   AuctionsIdRoute: typeof AuctionsIdRoute
   AuctionsIndexRoute: typeof AuctionsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/setup-admin': {
+      id: '/setup-admin'
+      path: '/setup-admin'
+      fullPath: '/setup-admin'
+      preLoaderRoute: typeof SetupAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -512,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   PendingApprovalRoute: PendingApprovalRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SetupAdminRoute: SetupAdminRoute,
   AuctionsIdRoute: AuctionsIdRoute,
   AuctionsIndexRoute: AuctionsIndexRoute,
 }

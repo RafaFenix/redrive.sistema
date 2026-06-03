@@ -17,13 +17,26 @@ function PendingPage() {
         </div>
         <h1 className="mt-6 text-3xl font-extrabold tracking-tight">Pedido em análise</h1>
         <p className="mt-3 max-w-prose text-sm text-muted-foreground">
-          A nossa equipa está a verificar a documentação da sua empresa. Receberá um email assim que o seu acesso for aprovado — normalmente em menos de 48h úteis.
+          A nossa equipa está a verificar a documentação da sua empresa. Receberá um email assim que
+          o seu acesso for aprovado — normalmente em menos de 48h úteis.
         </p>
-        <div className="mt-8 flex gap-3">
-          <Link to="/auctions" className="border-2 border-foreground px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link
+            to="/auctions"
+            className="border-2 border-foreground px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background"
+          >
             Ver leilões públicos
           </Link>
-          <Link to="/" className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+          <Link
+            to="/setup-admin"
+            className="border-2 border-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            Configurar primeiro admin
+          </Link>
+          <Link
+            to="/"
+            className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
             Voltar ao início
           </Link>
         </div>
