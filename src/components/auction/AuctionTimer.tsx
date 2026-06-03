@@ -24,12 +24,17 @@ function diff(endsAt: string) {
 }
 
 export function AuctionTimer({ endsAt, status = "active", size = "md", className }: Props) {
-  const [tick, setTick] = useState(() => diff(endsAt));
+  const [tick, setTick] = useState<ReturnType<typeof diff> | null>(null);
 
   useEffect(() => {
+    setTick(diff(endsAt));
     const i = setInterval(() => setTick(diff(endsAt)), 1000);
     return () => clearInterval(i);
   }, [endsAt]);
+
+  if (!tick) {
+    return <span className={cn("font-mono tabular-nums tracking-tight text-muted-foreground", sizeClasses[size], className)}>--:--:--</span>;
+  }
 
   if (status === "ended" || tick.ended) {
     return (
