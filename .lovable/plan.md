@@ -1,78 +1,131 @@
 
-# Plano — ReDrive MVP (Fase visual com dados mock)
+# ReDrive — Plano para versão funcional (PRD v1.1)
 
-Objetivo: ter todas as ecrãs principais navegáveis com dados fictícios, design coeso, pronto para iterar. Sem base de dados, sem auth, sem Stripe, sem realtime — tudo isso entra numa segunda fase quando ativarmos Lovable Cloud.
+## 1. O que já está feito (visual / mock)
 
-## Adaptação de stack
+Frontend completo em **TanStack Start** (não Next.js — adaptado) com dados mock:
+- Design system "Terminal precision" (`src/styles.css`)
+- Componentes: `AuctionTimer`, `BidPanel`, `BidHistory`, `ReserveIndicator`, `VehicleCard`, `VehicleGallery`
+- Layouts e navegação: público, buyer, admin
+- Rotas públicas: `/`, `/auctions`, `/auctions/$id`, `/how-it-works`, `/login`, `/register`, `/pending-approval`
+- Rotas buyer: `dashboard`, `bids`, `won`, `negotiations`
+- Rotas admin: `dashboard`, `vehicles`, `auctions`, `users`, `negotiations`
+- Mock data com tipos `Auction`, `Vehicle`, `Bid`, `Negotiation`
 
-| PRD (Next.js)                    | Implementação Lovable                              |
-| -------------------------------- | -------------------------------------------------- |
-| Next.js App Router + middleware  | TanStack Start (file-based routes em `src/routes`) |
-| Supabase Auth Helpers            | Lovable Cloud (Supabase) — fase 2                  |
-| Edge Functions (`place-bid`...)  | `createServerFn` em TanStack — fase 2              |
-| Tailwind + shadcn/ui             | Mantém-se igual                                    |
+**Falta visualmente do PRD v1.1:** Watchlist, NotificationBell, MarketPriceHint, DocumentsList, filtros completos no catálogo, timeline de entrega em `/buyer/won/$id`, campos novos no form admin (COC, lead_time, market_price_ref, appraisal, service_history).
 
-Funcionalmente é equivalente; só muda a forma de escrever rotas/server functions.
+## 2. Estratégia: 3 fases
 
-## Design direction
+Para ter algo **funcional rapidamente**, divido em fases. A Fase A é o mínimo para testar o ciclo crítico (registo → aprovação → licitar → ganhar). Fases B e C ficam para depois.
 
-Para um leilão B2B automóvel quero uma estética próxima de **Copart / BCA / Auto1** mas mais limpa e premium: dark mode com acentos quentes (laranja/âmbar para urgência de leilão), tipografia técnica, muita densidade de informação sem parecer caótica. Vou propor 3 direções visuais via `design--create_directions` antes de construir, para escolheres.
+---
 
-## Páginas a construir (todas com dados mock em `src/lib/mock-data.ts`)
+### Fase A — MVP funcional mínimo (FAZER AGORA)
 
-### Públicas
-1. `/` — Landing: hero, "leilões a terminar em breve", "destaques", como funciona, CTA registo empresa.
-2. `/auctions` — Grelha de leilões ativos com filtros (marca, combustível, ano, km).
-3. `/auctions/$id` — Ficha completa: galeria, specs, painel de licitação, timer animado, indicador de reserva, histórico anónimo de lances, relatório de danos, serviços adicionais.
-4. `/login` e `/register` — Forms visuais (sem backend).
-5. `/pending-approval` — Estado de espera.
+Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 
-### Buyer (sem gate real ainda, navegável diretamente)
-6. `/buyer/dashboard` — KPIs (lances ativos, ganhos, em negociação).
-7. `/buyer/bids` — Histórico de lances.
-8. `/buyer/won` — Leilões ganhos.
-9. `/buyer/negotiations` — Lista + detalhe de rondas de contraoferta.
+**A.1 — Backend base**
+- Ativar Lovable Cloud (Supabase gerido)
+- Migration com schema PRD v1.1 mas reduzido:
+  - `profiles`, `user_roles` (separado, padrão Lovable), `vehicles`, `auctions`, `bids`, `orders`, `negotiations`, `negotiation_rounds`, `notifications`, `watchlist`
+  - Enums todos (incluindo `delivery_status`, `notification_type`, `auction_mode`)
+  - Colunas Fase 2 já criadas mas inativas: `auctions.mode`, `bids.max_autobid_amount`, `bids.is_autobid`
+- RLS em todas as tabelas + GRANTs corretos
+- Função `has_role()` security definer
+- Views públicas: `public_vehicles`, `public_auctions` (sem `vin`, `origin_plate`, `purchase_price`, `reserve_price`)
 
-### Admin (sem gate real ainda)
-10. `/admin/dashboard` — Contadores + tabela de leilões ativos.
-11. `/admin/vehicles` + `/admin/vehicles/new` — Lista e formulário (visual).
-12. `/admin/auctions` + `/admin/auctions/new` + `/admin/auctions/$id` — Lista, criação, detalhe com todos os lances (admin vê identidade).
-13. `/admin/users` — Tabs Pendentes/Aprovados/Rejeitados/Suspensos.
-14. `/admin/negotiations` — Formulário de contraoferta.
+**A.2 — Auth**
+- Email + password (sem Google nesta fase, simplificar)
+- Trigger auto-criar `profile` com `status='pending'` no signup
+- Rota `_authenticated/` (integração-managed) + verificação de role/status nos layouts buyer/admin
+- Rota `/reset-password`
 
-## Componentes-chave reutilizáveis
+**A.3 — Server functions críticas (createServerFn)**
+- `placeBid` — com toda a lógica do PRD §6.1 (validação, outbid, extensão 2min, criar notification, broadcast)
+- `buyNow` — encerra leilão imediato
+- `closeAuction` (chamada por cron)
+- `approveUser` / `rejectUser` / `suspendUser`
+- `createVehicle` / `updateVehicle` (admin)
+- `createAuction` / `cancelAuction` (admin)
+- `addToWatchlist` / `removeFromWatchlist`
+- `markNotificationRead`
+- `submitCounterOffer` / `acceptOffer` / `rejectOffer` (negociações, máx 5 rondas)
 
-- `AuctionTimer` — countdown DD:HH:MM:SS, fica vermelho < 5min, banner < 2min. (anima com `setInterval` local na fase visual.)
-- `ReserveIndicator` — badge verde/vermelho.
-- `BidPanel` — botões de incremento rápido + lance personalizado + "Comprar Já".
-- `BidHistory` — lista anónima ("VW***") para buyer, identificada para admin.
-- `VehicleCard` — card de listagem.
-- `VehicleGallery` — carousel de fotos com thumbnails.
-- `DamageReportBadge` — link/botão para PDF.
-- `AdminLayout` / `BuyerLayout` — sidebars e top bars distintas.
+**A.4 — Realtime**
+- Canal `auction:{id}` — broadcast em cada `placeBid`
+- Canal `user:{id}` — notificações in-app
+- Hooks `useAuctionRealtime()` e `useNotifications()` para subscrever
 
-## Dados mock
+**A.5 — Storage**
+- Bucket `vehicle-photos` (público)
+- Bucket `vehicle-documents` (privado, signed URLs para damage/appraisal/service)
+- Bucket `trade-registry` (privado, só admin acede)
 
-Um único `src/lib/mock-data.ts` com ~12 viaturas (marcas comuns: VW, BMW, Mercedes, Renault, Peugeot), leilões em diferentes estados (a começar, ativo com 30min, ativo com 2 dias, terminado, em negociação), lances simulados, utilizadores (admin + 3 buyers em estados diferentes), negociações com 2-3 rondas. Imagens via Unsplash ou placeholders consistentes.
+**A.6 — Cron (pg_cron)**
+- `close-auctions` (cada minuto) → chama `/api/public/close-auctions` com secret
+- `activate-auctions` (cada minuto) → UPDATE direto SQL
+- `notify-watchlist-1h` (cada 5 min) → endpoint público
+- `expire-negotiations` (diário) → UPDATE direto SQL
+- Rota `src/routes/api/public/close-auctions.ts` com verificação por header secret
 
-## Idioma
+**A.7 — Ligar frontend ao backend**
+- Substituir `mock-data.ts` por queries reais via TanStack Query + server functions
+- `BidPanel` chama `placeBid` real, mostra erros do servidor
+- Listagem com filtros funcionais
+- Admin forms inserem na DB
+- NotificationBell + WatchlistButton + MarketPriceHint + DocumentsList implementados
+- Página `/buyer/won/$id` com timeline `delivery_status`
 
-Toda a UI em **português**, código em **inglês** (conforme PRD §0.6).
+**A.8 — Critérios de aceitação Fase A**
+- Admin cria viatura + leilão
+- Buyer regista, admin aprova, buyer licita
+- Realtime: outro browser vê o lance aparecer
+- Timer estende nos últimos 2min
+- Cron fecha leilão e cria order ou negotiation
+- Notificações aparecem em tempo real
 
-## O que NÃO entra nesta fase
+---
 
-- Lovable Cloud / Supabase
-- Auth real, RLS, middleware de proteção
-- Stripe / Resend / Twilio
-- Edge functions / pg_cron
-- Realtime (o timer simula localmente)
-- Upload real de ficheiros (inputs visuais apenas)
+### Fase B — Pagamentos e emails (FAZER DEPOIS)
 
-## Próximos passos depois de aprovares
+- Stripe SetupIntent (cartão antes de licitar)
+- Stripe PaymentIntent (depósito de garantia ao vencedor)
+- Webhooks Stripe em `/api/public/webhooks/stripe`
+- Emails transacionais via Resend (bid_outbid, auction_won, account_approved, etc.)
+- Templates React Email
 
-1. Chamo `design--create_directions` com 3 direções visuais para escolheres.
-2. Constrói-se tudo na direção escolhida.
-3. Iteramos visualmente.
-4. Quando estiveres satisfeito, ativas Lovable Cloud e ligamos backend real (auth → schema → RLS → realtime → server functions → Stripe).
+### Fase C — Polimento e Fase 2 do PRD
 
-Sobre "fazer via localhost": o preview do Lovable já é equivalente — vês mudanças ao vivo aqui. Quando estiver pronto, publica-se com um clique.
+- SMS via Twilio (opcional)
+- Blind auction (lógica)
+- Autobid (lógica)
+- Analytics de preços históricos
+- Account manager (UI)
+- Lotes/bundles
+
+---
+
+## 3. Detalhes técnicos importantes
+
+**Stack adaptada:** PRD diz Next.js + Edge Functions Supabase. Vamos usar **TanStack Start + createServerFn** (já é o template). Toda a lógica de "Edge Function" do PRD vira `createServerFn` com `requireSupabaseAuth`. Apenas o endpoint chamado por `pg_cron` é uma rota pública em `/api/public/*` com verificação de secret.
+
+**Localhost:** Lovable Cloud funciona automaticamente em dev — o preview já é "localhost" para o utilizador. Quando estiver pronto, basta publicar.
+
+**Ordem de execução dentro da Fase A:**
+1. Schema + RLS + views
+2. Auth + trigger profile
+3. CRUD admin (vehicles, auctions) ligado
+4. placeBid + realtime
+5. Watchlist + notifications + componentes em falta
+6. Cron + close-auction
+7. Negociações
+8. Timeline de entrega
+
+## 4. Decisão necessária
+
+Para começar a Fase A preciso de:
+1. **Ativar Lovable Cloud** — vou pedir-te para ativar nas configurações (necessário para qualquer backend).
+2. **Confirmar campos do `profiles`** que listo em A.1 (company_name, vat_number, contact_name, contact_phone, address/city/country, delivery_address/city/country, trade_registry URL). Está OK?
+3. **Idioma das mensagens de erro do servidor:** português (consistente com UI), certo?
+
+Depois disto, implemento a Fase A inteira. Aviso ao longo do caminho quando algo precisar da tua atenção (ex: aprovar primeiro buyer manualmente para testar).
