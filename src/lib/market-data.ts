@@ -6,6 +6,20 @@ export type AuctionMode = "standard" | "blind";
 export type BidStatus = "active" | "outbid" | "won" | "cancelled";
 export type NegotiationStatus = "open" | "accepted" | "rejected" | "expired";
 export type NegotiationActor = "admin" | "buyer";
+export type NotificationType =
+  | "account_approved"
+  | "account_rejected"
+  | "bid_placed"
+  | "bid_outbid"
+  | "auction_won"
+  | "auction_lost"
+  | "auction_ending"
+  | "watchlist_starting"
+  | "negotiation_started"
+  | "negotiation_received"
+  | "negotiation_accepted"
+  | "negotiation_rejected"
+  | "order_created";
 
 export interface Vehicle {
   id: string;
@@ -95,6 +109,16 @@ export interface Negotiation {
   };
 }
 
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+}
+
 type VehicleRow = {
   id: string;
   status: VehicleStatus;
@@ -168,6 +192,16 @@ type NegotiationRoundRow = {
   initiated_by: NegotiationActor;
   amount: number;
   message: string | null;
+  created_at: string;
+};
+
+type NotificationRow = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  data: Record<string, unknown> | null;
+  read_at: string | null;
   created_at: string;
 };
 
@@ -281,6 +315,18 @@ export function mapNegotiation(row: NegotiationRow): Omit<Negotiation, "rounds">
     acceptedAmount: row.accepted_amount,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+export function mapNotification(row: NotificationRow): AppNotification {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    body: row.body ?? "",
+    data: row.data ?? {},
+    readAt: row.read_at,
+    createdAt: row.created_at,
   };
 }
 
@@ -711,6 +757,101 @@ export async function acceptNegotiationOffer(negotiationId: string) {
 
   if (error) throw error;
   return data as string;
+}
+
+export async function listNotifications(limit = 20) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("id,type,title,body,data,read_at,created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return ((data ?? []) as NotificationRow[]).map(mapNotification);
+}
+
+export async function markNotificationRead(notificationId: string) {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId);
+
+  if (error) throw error;
+}
+
+export async function markAllNotificationsRead() {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .is("read_at", null);
+
+  if (error) throw error;
+}
+
+export async function getWatchlistAuctionIds() {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.from("watchlist").select("auction_id");
+
+  if (error) throw error;
+  return new Set((data ?? []).map((row) => row.auction_id as string));
+}
+
+export async function isAuctionWatched(auctionId: string) {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) return false;
+
+  const { data, error } = await supabase
+    .from("watchlist")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("auction_id", auctionId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+}
+
+export async function toggleAuctionWatchlist(auctionId: string) {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) throw new Error("Inicie sessão para adicionar leilões à watchlist.");
+
+  const { data: existing, error: existingError } = await supabase
+    .from("watchlist")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("auction_id", auctionId)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+
+  if (existing) {
+    const { error } = await supabase.from("watchlist").delete().eq("id", existing.id);
+    if (error) throw error;
+    return false;
+  }
+
+  const { error } = await supabase.from("watchlist").insert({
+    user_id: user.id,
+    auction_id: auctionId,
+  });
+
+  if (error) throw error;
+  return true;
 }
 
 export function parseInteger(value: FormDataEntryValue | null): number | null {

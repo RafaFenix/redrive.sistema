@@ -6,33 +6,34 @@
 
 ## 🖥️ Stack Tecnológica
 
-| Camada | Tecnologia | Notas |
-|--------|-----------|-------|
+| Camada        | Tecnologia                                      | Notas                                              |
+| ------------- | ----------------------------------------------- | -------------------------------------------------- |
 | **Framework** | [TanStack Start](https://tanstack.com/start) v1 | Full-stack React 19 com SSR/SSG e `createServerFn` |
-| **Build** | Vite 7 | Via `@lovable.dev/vite-tanstack-config` |
-| **Runtime** | Cloudflare Workers (edge) | Serverless — sem Node.js nativo |
-| **Estilos** | Tailwind CSS v4 + OKLCH | Design system "Terminal precision" |
-| **UI** | shadcn/ui + Radix UI | 40+ componentes primitivos |
-| **Estado** | TanStack Query v5 | Data fetching, caching, SSR hydration |
-| **Router** | TanStack Router v1 | File-based routing, type-safe |
-| **Backend** | Supabase (via Lovable Cloud) | PostgreSQL + Auth + Realtime + Storage |
-| **Forms** | React Hook Form + Zod | Validação tipada |
-| **Gráficos** | Recharts | Analytics e dashboards |
-| **Carrossel** | Embla Carousel | Galeria de viaturas |
-| **Data** | date-fns | Manipulação de datas |
-| **Ícones** | Lucide React | Ícones consistentes |
-| **Toast** | Sonner | Notificações in-app |
+| **Build**     | Vite 7                                          | Via `@lovable.dev/vite-tanstack-config`            |
+| **Runtime**   | Cloudflare Workers (edge)                       | Serverless — sem Node.js nativo                    |
+| **Estilos**   | Tailwind CSS v4 + OKLCH                         | Design system "Terminal precision"                 |
+| **UI**        | shadcn/ui + Radix UI                            | 40+ componentes primitivos                         |
+| **Estado**    | TanStack Query v5                               | Data fetching, caching, SSR hydration              |
+| **Router**    | TanStack Router v1                              | File-based routing, type-safe                      |
+| **Backend**   | Supabase (via Lovable Cloud)                    | PostgreSQL + Auth + Realtime + Storage             |
+| **Forms**     | React Hook Form + Zod                           | Validação tipada                                   |
+| **Gráficos**  | Recharts                                        | Analytics e dashboards                             |
+| **Carrossel** | Embla Carousel                                  | Galeria de viaturas                                |
+| **Data**      | date-fns                                        | Manipulação de datas                               |
+| **Ícones**    | Lucide React                                    | Ícones consistentes                                |
+| **Toast**     | Sonner                                          | Notificações in-app                                |
 
 ---
 
 ## ⚠️ Estado Atual do Projeto
 
-> **Fase: Frontend Visual Completo (Mock Data)**
+> **Fase: MVP funcional ligado ao Supabase**
 >
-> O frontend está 100% funcional visualmente, mas opera com dados mock (`src/lib/mock-data.ts`).
-> O backend (Supabase/Lovable Cloud) **está configurado mas não ativo** — a base de dados, auth, realtime, storage e server functions ainda não foram ligados.
+> Auth, schema/RLS, aprovação de utilizadores, catálogo, viaturas, leilões, lances, buy now, negociações,
+> notificações e watchlist já usam Supabase real. O detalhe de leilão recebe atualizações via Realtime
+> para lances/preço, e as notificações são atualizadas em tempo real na área autenticada.
 >
-> Ver secção [Checklist do MVP](#-checklist-do-mvp) abaixo para o estado detalhado de cada funcionalidade.
+> Ainda faltam Storage completo, jobs/cron de ciclo de leilão e algumas melhorias de produto listadas no checklist.
 
 ---
 
@@ -111,14 +112,14 @@ A aplicação estará disponível em **http://localhost:3000** (ou a porta que o
 
 ### Scripts disponíveis
 
-| Script | Descrição |
-|--------|-----------|
-| `bun dev` | Servidor de desenvolvimento com HMR |
-| `bun run build` | Build de produção (SSR + cliente) |
-| `bun run build:dev` | Build em modo development |
-| `bun run preview` | Preview do build de produção localmente |
-| `bun run lint` | ESLint em todo o projeto |
-| `bun run format` | Prettier — formatação automática |
+| Script              | Descrição                               |
+| ------------------- | --------------------------------------- |
+| `bun dev`           | Servidor de desenvolvimento com HMR     |
+| `bun run build`     | Build de produção (SSR + cliente)       |
+| `bun run build:dev` | Build em modo development               |
+| `bun run preview`   | Preview do build de produção localmente |
+| `bun run lint`      | ESLint em todo o projeto                |
+| `bun run format`    | Prettier — formatação automática        |
 
 ### 5. (Opcional) Supabase local
 
@@ -212,7 +213,7 @@ redrive/
 
 ## 🎨 Design System
 
-**Direção visual:** *Terminal precision* — inspirado em terminais de leilão físicos, com precisão tipográfica e densidade controlada.
+**Direção visual:** _Terminal precision_ — inspirado em terminais de leilão físicos, com precisão tipográfica e densidade controlada.
 
 - **Tipografia:** Inter (sans-serif, body), JetBrains Mono (monospace, labels e dados)
 - **Paleta:** Base monocromática com acento queimado (terracota/cobre). OKLCH para precisão perceptual.
@@ -225,25 +226,25 @@ redrive/
 
 ### Cliente (Browser) — prefixo `VITE_`
 
-| Variável | Obrigatória | Descrição |
-|----------|-------------|-----------|
-| `VITE_SUPABASE_URL` | Sim (Fase A+) | URL do projeto Supabase |
+| Variável                        | Obrigatória   | Descrição                           |
+| ------------------------------- | ------------- | ----------------------------------- |
+| `VITE_SUPABASE_URL`             | Sim (Fase A+) | URL do projeto Supabase             |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Sim (Fase A+) | Chave pública anon/role do Supabase |
 
 > Acessíveis via `import.meta.env.VITE_*` em qualquer ficheiro. São injetadas no bundle pelo Vite em build-time.
 
 ### Servidor (Server Functions / SSR) — sem prefixo
 
-| Variável | Obrigatória | Descrição |
-|----------|-------------|-----------|
-| `SUPABASE_URL` | Sim (Fase A+) | URL do projeto Supabase |
-| `SUPABASE_PUBLISHABLE_KEY` | Sim (Fase A+) | Chave pública (para auth middleware) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Sim (Fase A+) | Chave de serviço — **bypass RLS**, apenas operações trusted |
-| `APP_SECRET` | Sim (Fase A+) | Segredo para cookies/sessão (min 32 chars) |
-| `CRON_SECRET` | Sim (Fase A+) | Header secret para endpoints `/api/public/*` chamados por `pg_cron` |
-| `STRIPE_SECRET_KEY` | Fase B | Chave secreta Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Fase B | Secret para verificar webhooks Stripe |
-| `RESEND_API_KEY` | Fase B | API key Resend para emails transacionais |
+| Variável                    | Obrigatória   | Descrição                                                           |
+| --------------------------- | ------------- | ------------------------------------------------------------------- |
+| `SUPABASE_URL`              | Sim (Fase A+) | URL do projeto Supabase                                             |
+| `SUPABASE_PUBLISHABLE_KEY`  | Sim (Fase A+) | Chave pública (para auth middleware)                                |
+| `SUPABASE_SERVICE_ROLE_KEY` | Sim (Fase A+) | Chave de serviço — **bypass RLS**, apenas operações trusted         |
+| `APP_SECRET`                | Sim (Fase A+) | Segredo para cookies/sessão (min 32 chars)                          |
+| `CRON_SECRET`               | Sim (Fase A+) | Header secret para endpoints `/api/public/*` chamados por `pg_cron` |
+| `STRIPE_SECRET_KEY`         | Fase B        | Chave secreta Stripe                                                |
+| `STRIPE_WEBHOOK_SECRET`     | Fase B        | Secret para verificar webhooks Stripe                               |
+| `RESEND_API_KEY`            | Fase B        | API key Resend para emails transacionais                            |
 
 > Acessíveis apenas dentro de `createServerFn` handlers e server routes via `process.env.*`. Nunca são expostas ao cliente.
 
@@ -317,11 +318,11 @@ redrive/
 
 ### 🔲 Ainda por fazer
 
-- [ ] **A.4 — Realtime**
-  - [ ] Canal `auction:{id}` — broadcast em cada lance
-  - [ ] Canal `user:{id}` — notificações in-app
-  - [ ] Hook `useAuctionRealtime()`
-  - [ ] Hook `useNotifications()`
+- [x] **A.4 — Realtime**
+  - [x] Canal `auction:{id}` — atualiza detalhe do leilão em lances/preço
+  - [x] Canal `user:{id}` — notificações in-app
+  - [x] Hook `useAuctionRealtime()`
+  - [x] `NotificationBell` com subscription realtime
 
 - [ ] **A.5 — Storage**
   - [ ] Upload real para bucket `vehicle-photos`
@@ -334,15 +335,15 @@ redrive/
   - [ ] `expire-negotiations`
 
 - [ ] **A.8 — Melhorias de produto**
-  - [ ] `NotificationBell` componente (dropdown de notificações)
-  - [ ] `WatchlistButton` (estrela nos cards)
+  - [x] `NotificationBell` componente (dropdown de notificações)
+  - [x] `WatchlistButton` (estrela nos cards)
   - [ ] `MarketPriceHint` (comparação com preço de mercado)
   - [ ] `DocumentsList` (relatórios de danos, peritagens)
   - [ ] Página `/buyer/won/$id` com timeline de `delivery_status`
   - [ ] Filtros completos no catálogo: marca, modelo, preço, ano, quilometragem, origem, estado, transmissão, combustível
   - [ ] Timer estende nos últimos 2 min
   - [ ] Cron fecha leilão e cria `order` ou `negotiation`
-  - [ ] Notificações aparecem em tempo real
+  - [x] Notificações aparecem em tempo real
 
 ---
 
@@ -393,13 +394,13 @@ redrive/
 
 ### Erros comuns
 
-| Erro | Causa | Solução |
-|------|-------|---------|
-| `createServerFn is not a function` | Import errado | Usar `@tanstack/react-start`, NÃO `@tanstack/start` |
-| `window is not defined` | Client-only em SSR | Mover import para dentro de função client-only ou renomear para `*.client.ts` |
-| `Unauthorized` durante build | `requireSupabaseAuth` em loader de rota pública | Mover chamada para componente com `useServerFn` + `useQuery`, ou usar rota `_authenticated/` |
-| `process.env.X is undefined` | Leitura fora de handler | Sempre ler `process.env` **dentro** do `.handler()` de `createServerFn` |
-| `[unenv] X is not implemented` | Pacote Node-only em server function | Substituir por alternativa edge-compatible |
+| Erro                               | Causa                                           | Solução                                                                                      |
+| ---------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `createServerFn is not a function` | Import errado                                   | Usar `@tanstack/react-start`, NÃO `@tanstack/start`                                          |
+| `window is not defined`            | Client-only em SSR                              | Mover import para dentro de função client-only ou renomear para `*.client.ts`                |
+| `Unauthorized` durante build       | `requireSupabaseAuth` em loader de rota pública | Mover chamada para componente com `useServerFn` + `useQuery`, ou usar rota `_authenticated/` |
+| `process.env.X is undefined`       | Leitura fora de handler                         | Sempre ler `process.env` **dentro** do `.handler()` de `createServerFn`                      |
+| `[unenv] X is not implemented`     | Pacote Node-only em server function             | Substituir por alternativa edge-compatible                                                   |
 
 ### Ferramentas de debug
 
@@ -438,5 +439,5 @@ Proprietário — ReDrive. Todos os direitos reservados.
 ---
 
 > **Última atualização:** 2026-06-03
-> **Versão do frontend:** 1.0 (mock)
+> **Versão do frontend:** 1.1 (Supabase MVP)
 > **Plano técnico:** ver `.lovable/plan.md`

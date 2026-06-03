@@ -12,17 +12,33 @@ export function PublicHeader() {
           REDRIVE<span className="text-foreground">.</span>
         </Link>
         <div className="hidden gap-6 text-sm font-medium md:flex">
-          <Link to="/auctions" className={cn("transition-colors", isActive("/auctions") ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
+          <Link
+            to="/auctions"
+            className={cn(
+              "transition-colors",
+              isActive("/auctions")
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
             Leilões
           </Link>
-          <Link to="/how-it-works" className={cn("transition-colors", isActive("/how-it-works") ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
+          <Link
+            to="/how-it-works"
+            className={cn(
+              "transition-colors",
+              isActive("/how-it-works")
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
             Como funciona
           </Link>
         </div>
       </div>
       <div className="flex items-center gap-4">
         <span className="hidden rounded-full bg-success/10 px-2 py-0.5 font-mono text-[10px] font-medium text-success ring-1 ring-success/20 md:inline">
-          LIVE: 5 LOTES
+          LEILÕES LIVE
         </span>
         <Link to="/login" className="text-sm font-semibold hover:text-primary">
           Entrar

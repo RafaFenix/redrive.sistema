@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Gavel, Trophy, Handshake, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const items = [
   { title: "Dashboard", url: "/buyer/dashboard", icon: LayoutDashboard },
@@ -41,7 +42,7 @@ export function BuyerSidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-border p-3 space-y-2">
+      <div className="space-y-2 border-t border-border p-3">
         <Link
           to="/auctions"
           className="block rounded-sm border border-foreground px-3 py-2 text-center text-xs font-bold uppercase tracking-wider hover:bg-foreground hover:text-background"
@@ -59,6 +60,9 @@ export function BuyerSidebar() {
           <Link to="/login" className="text-muted-foreground hover:text-foreground">
             <LogOut className="size-3.5" />
           </Link>
+        </div>
+        <div className="flex justify-end">
+          <NotificationBell />
         </div>
       </div>
     </aside>

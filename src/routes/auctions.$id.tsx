@@ -1,9 +1,11 @@
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleGallery } from "@/components/vehicle/VehicleGallery";
 import { BidPanel } from "@/components/auction/BidPanel";
 import { BidHistory } from "@/components/auction/BidHistory";
 import { formatEUR, formatNumber, getPublicAuction } from "@/lib/market-data";
+import { useAuctionRealtime } from "@/hooks/use-auction-realtime";
 import { FileText, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/auctions/$id")({
@@ -43,6 +45,9 @@ function AuctionDetail() {
   const router = useRouter();
   const { auction, vehicle, bids } = Route.useLoaderData();
   const hasDamageReport = vehicle.damageReportUrl !== "#";
+  const refreshAuction = useCallback(() => router.invalidate(), [router]);
+
+  useAuctionRealtime(auction.id, refreshAuction);
 
   return (
     <div className="min-h-screen bg-background">
@@ -151,7 +156,7 @@ function AuctionDetail() {
           {/* Right — sticky bid panel */}
           <div className="lg:col-span-4">
             <div className="sticky top-20 space-y-4">
-              <BidPanel auction={auction} onBidPlaced={() => router.invalidate()} />
+              <BidPanel auction={auction} onBidPlaced={refreshAuction} />
               <BidHistory bids={bids} />
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Car, Gavel, Users, Handshake, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const items = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
@@ -42,7 +43,7 @@ export function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-border p-3">
+      <div className="space-y-2 border-t border-border p-3">
         <div className="flex items-center gap-3 rounded-sm bg-muted p-2">
           <div className="grid size-8 place-items-center rounded-full bg-foreground text-[10px] font-bold text-background">
             SM
@@ -54,6 +55,9 @@ export function AdminSidebar() {
           <Link to="/login" className="text-muted-foreground hover:text-foreground">
             <LogOut className="size-3.5" />
           </Link>
+        </div>
+        <div className="flex justify-end">
+          <NotificationBell />
         </div>
       </div>
     </aside>
