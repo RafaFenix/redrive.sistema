@@ -5,14 +5,18 @@ const FALLBACK_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4FXn3G_k5Qw0VEIz6sf9Bw
 
 let supabaseClient: SupabaseClient | undefined;
 
+function readSupabaseConfig(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
 export function getSupabaseClient() {
   if (supabaseClient) return supabaseClient;
 
-  const supabaseUrl =
-    (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? FALLBACK_SUPABASE_URL;
-  const publishableKey =
-    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
-    FALLBACK_SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl = readSupabaseConfig(import.meta.env.VITE_SUPABASE_URL, FALLBACK_SUPABASE_URL);
+  const publishableKey = readSupabaseConfig(
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    FALLBACK_SUPABASE_PUBLISHABLE_KEY,
+  );
 
   if (!supabaseUrl || !publishableKey) {
     throw new Error(
