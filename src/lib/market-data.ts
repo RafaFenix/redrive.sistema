@@ -60,6 +60,10 @@ export interface Bid {
   createdAt: string;
 }
 
+export type BuyerBid = Bid & {
+  auction?: Auction;
+};
+
 type VehicleRow = {
   id: string;
   status: VehicleStatus;
@@ -188,12 +192,12 @@ export function mapAuction(row: AuctionRow): Auction {
   };
 }
 
-export function mapBid(row: BidRow, index: number): Bid {
+export function mapBid(row: BidRow, index: number, bidderHint?: string): Bid {
   return {
     id: row.id,
     auctionId: row.auction_id,
     bidderId: row.bidder_id,
-    bidderHint: `Comprador ${String(index + 1).padStart(2, "0")}`,
+    bidderHint: bidderHint ?? `Comprador ${String(index + 1).padStart(2, "0")}`,
     amount: row.amount,
     status: row.status,
     isBuyNow: row.is_buy_now,
@@ -241,6 +245,73 @@ export async function listAdminAuctions() {
     ...mapAuction(row),
     vehicle: vehiclesById.get(row.vehicle_id),
   }));
+}
+
+export async function getAdminAuction(id: string) {
+  const supabase = getSupabaseClient();
+  const { data: auctionRow, error: auctionError } = await supabase
+    .from("auctions")
+    .select(
+      "id,lot_number,vehicle_id,status,mode,starting_price,reserve_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (auctionError) throw auctionError;
+  if (!auctionRow) return null;
+
+  const auction = mapAuction(auctionRow as AuctionRow);
+  const [{ data: vehicleRow, error: vehicleError }, { data: bidRows, error: bidsError }] =
+    await Promise.all([
+      supabase
+        .from("vehicles")
+        .select(
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+        )
+        .eq("id", auction.vehicleId)
+        .maybeSingle(),
+      supabase
+        .from("bids")
+        .select("id,auction_id,bidder_id,amount,status,is_buy_now,created_at")
+        .eq("auction_id", id)
+        .order("amount", { ascending: false }),
+    ]);
+
+  if (vehicleError) throw vehicleError;
+  if (bidsError) throw bidsError;
+  if (!vehicleRow) return null;
+
+  const bidderIds = [...new Set((bidRows ?? []).map((row) => row.bidder_id as string))];
+  const { data: profiles, error: profilesError } = bidderIds.length
+    ? await supabase.from("profiles").select("id,company_name").in("id", bidderIds)
+    : { data: [], error: null };
+
+  if (profilesError) throw profilesError;
+
+  const companiesById = new Map(
+    (profiles ?? []).map((profile) => [
+      profile.id as string,
+      (profile.company_name as string) || "Comprador",
+    ]),
+  );
+
+  return {
+    auction,
+    vehicle: mapVehicle(vehicleRow as VehicleRow),
+    bids: ((bidRows ?? []) as BidRow[]).map((row, index) =>
+      mapBid(row, index, companiesById.get(row.bidder_id)),
+    ),
+  };
+}
+
+export async function cancelAuction(id: string) {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase
+    .from("auctions")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw error;
 }
 
 export async function listPublicAuctions() {
@@ -309,6 +380,87 @@ export async function getPublicAuction(id: string) {
     vehicle: mapVehicle(vehicleRow as VehicleRow),
     bids: bidsError ? [] : ((bidRows ?? []) as BidRow[]).map(mapBid),
   };
+}
+
+export async function placeAuctionBid({
+  auctionId,
+  amount,
+  isBuyNow = false,
+}: {
+  auctionId: string;
+  amount: number;
+  isBuyNow?: boolean;
+}) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.rpc("place_bid", {
+    target_auction_id: auctionId,
+    bid_amount: amount,
+    is_buy_now: isBuyNow,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
+export async function listBuyerBids(): Promise<BuyerBid[]> {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) return [];
+
+  const { data: bidRows, error: bidsError } = await supabase
+    .from("bids")
+    .select("id,auction_id,bidder_id,amount,status,is_buy_now,created_at")
+    .eq("bidder_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (bidsError) throw bidsError;
+  if (!bidRows?.length) return [];
+
+  const auctionIds = [...new Set(bidRows.map((row) => row.auction_id as string))];
+  const [{ data: auctionRows, error: auctionsError }, { data: vehicleRows, error: vehiclesError }] =
+    await Promise.all([
+      supabase
+        .from("public_auctions")
+        .select(
+          "id,lot_number,vehicle_id,status,mode,starting_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count,reserve_met",
+        )
+        .in("id", auctionIds),
+      supabase
+        .from("public_vehicles")
+        .select(
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+        ),
+    ]);
+
+  if (auctionsError) throw auctionsError;
+  if (vehiclesError) throw vehiclesError;
+
+  const vehiclesById = new Map(
+    ((vehicleRows ?? []) as VehicleRow[]).map((row) => [row.id, mapVehicle(row)]),
+  );
+  const auctionsById = new Map(
+    ((auctionRows ?? []) as AuctionRow[]).map((row) => [
+      row.id,
+      { ...mapAuction(row), vehicle: vehiclesById.get(row.vehicle_id) },
+    ]),
+  );
+
+  return (bidRows as BidRow[]).map((row, index) => ({
+    ...mapBid(row, index),
+    auction: auctionsById.get(row.auction_id),
+  }));
+}
+
+export async function listBuyerWonAuctions() {
+  const bids = await listBuyerBids();
+  return bids
+    .filter((bid) => bid.status === "won" && bid.auction)
+    .map((bid) => ({ bid, auction: bid.auction! }));
 }
 
 export function parseInteger(value: FormDataEntryValue | null): number | null {

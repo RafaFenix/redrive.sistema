@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { auctions, bids, formatEUR, getVehicle } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import { BuyerBid, formatEUR, listBuyerBids } from "@/lib/market-data";
 import { AuctionTimer } from "@/components/auction/AuctionTimer";
 import { Gavel, Trophy, Handshake, Eye } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/buyer/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ReDrive" }] }),
@@ -9,19 +11,37 @@ export const Route = createFileRoute("/buyer/dashboard")({
 });
 
 function BuyerDashboard() {
-  const userId = "u-buyer-1";
-  const myBids = bids.filter((b) => b.bidderId === userId);
-  const activeBids = myBids.filter((b) => b.status === "active");
-  const wonAuctions = auctions.filter((a) => a.winnerId === userId);
+  const [myBids, setMyBids] = useState<BuyerBid[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadBids() {
+      try {
+        const data = await listBuyerBids();
+        setMyBids(data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Não foi possível carregar o dashboard.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadBids();
+  }, []);
+
+  const activeBids = myBids.filter((bid) => bid.status === "active");
+  const wonBids = myBids.filter((bid) => bid.status === "won");
+  const visibleActiveBids = activeBids.slice(0, 8);
 
   return (
     <div className="p-8">
       <div className="mb-8 flex items-end justify-between">
         <div>
           <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            Auto Marques Lda · Aprovado
+            Conta aprovada
           </span>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Olá, João</h1>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Dashboard</h1>
         </div>
         <Link
           to="/auctions"
@@ -33,9 +53,9 @@ function BuyerDashboard() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <KPI icon={Gavel} label="Lances ativos" value={activeBids.length} accent="text-primary" />
-        <KPI icon={Trophy} label="Leilões ganhos" value={wonAuctions.length} accent="text-success" />
-        <KPI icon={Handshake} label="Em negociação" value={1} />
-        <KPI icon={Eye} label="A observar" value={4} />
+        <KPI icon={Trophy} label="Leilões ganhos" value={wonBids.length} accent="text-success" />
+        <KPI icon={Handshake} label="Em negociação" value={0} />
+        <KPI icon={Eye} label="A observar" value={0} />
       </div>
 
       <div className="mt-8">
@@ -55,28 +75,44 @@ function BuyerDashboard() {
               </tr>
             </thead>
             <tbody>
-              {activeBids.map((b) => {
-                const a = auctions.find((x) => x.id === b.auctionId);
-                const v = a ? getVehicle(a.vehicleId) : undefined;
-                if (!a || !v) return null;
-                const isWinning = a.currentPrice === b.amount;
-                return (
-                  <tr key={b.id} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3 font-mono text-xs">{a.lotNumber}</td>
-                    <td className="px-4 py-3 font-medium">{v.year} {v.make} {v.model}</td>
-                    <td className="px-4 py-3 font-mono">{formatEUR(b.amount)}</td>
-                    <td className="px-4 py-3 font-mono font-bold">{formatEUR(a.currentPrice)}</td>
-                    <td className="px-4 py-3"><AuctionTimer endsAt={a.endsAt} status={a.status} size="sm" /></td>
-                    <td className="px-4 py-3">
-                      <span className={isWinning ? "text-success" : "text-primary"}>
-                        {isWinning ? "● A ganhar" : "● Superado"}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {activeBids.length === 0 && (
-                <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Sem lances ativos.</td></tr>
+              {isLoading && (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    A carregar lances...
+                  </td>
+                </tr>
+              )}
+              {!isLoading &&
+                visibleActiveBids.map((b) => {
+                  const a = b.auction;
+                  const v = a?.vehicle;
+                  if (!a || !v) return null;
+                  const isWinning = a.currentPrice === b.amount;
+                  return (
+                    <tr key={b.id} className="border-b border-border last:border-0">
+                      <td className="px-4 py-3 font-mono text-xs">{a.lotNumber}</td>
+                      <td className="px-4 py-3 font-medium">
+                        {v.year} {v.make} {v.model}
+                      </td>
+                      <td className="px-4 py-3 font-mono">{formatEUR(b.amount)}</td>
+                      <td className="px-4 py-3 font-mono font-bold">{formatEUR(a.currentPrice)}</td>
+                      <td className="px-4 py-3">
+                        <AuctionTimer endsAt={a.endsAt} status={a.status} size="sm" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={isWinning ? "text-success" : "text-primary"}>
+                          {isWinning ? "● A ganhar" : "● Superado"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              {!isLoading && visibleActiveBids.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    Sem lances ativos.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -86,11 +122,23 @@ function BuyerDashboard() {
   );
 }
 
-function KPI({ icon: Icon, label, value, accent }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; accent?: string }) {
+function KPI({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  accent?: string;
+}) {
   return (
     <div className="border border-border bg-card p-5">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          {label}
+        </span>
         <Icon className={`size-4 ${accent ?? "text-muted-foreground"}`} />
       </div>
       <div className="mt-2 text-3xl font-extrabold tracking-tight">{value}</div>

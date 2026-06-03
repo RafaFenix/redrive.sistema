@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleGallery } from "@/components/vehicle/VehicleGallery";
 import { BidPanel } from "@/components/auction/BidPanel";
@@ -40,6 +40,7 @@ export const Route = createFileRoute("/auctions/$id")({
 });
 
 function AuctionDetail() {
+  const router = useRouter();
   const { auction, vehicle, bids } = Route.useLoaderData();
   const hasDamageReport = vehicle.damageReportUrl !== "#";
 
@@ -150,7 +151,7 @@ function AuctionDetail() {
           {/* Right — sticky bid panel */}
           <div className="lg:col-span-4">
             <div className="sticky top-20 space-y-4">
-              <BidPanel auction={auction} />
+              <BidPanel auction={auction} onBidPlaced={() => router.invalidate()} />
               <BidHistory bids={bids} />
             </div>
           </div>

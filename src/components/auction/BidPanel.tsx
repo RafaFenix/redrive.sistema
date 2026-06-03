@@ -1,30 +1,46 @@
 import { useState } from "react";
-import { Auction, formatEUR } from "@/lib/market-data";
+import { Auction, formatEUR, placeAuctionBid } from "@/lib/market-data";
 import { ReserveIndicator } from "./ReserveIndicator";
 import { AuctionTimer } from "./AuctionTimer";
 import { toast } from "sonner";
 
 interface Props {
   auction: Auction;
+  onBidPlaced?: () => void | Promise<void>;
 }
 
-export function BidPanel({ auction }: Props) {
+export function BidPanel({ auction, onBidPlaced }: Props) {
   const [custom, setCustom] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEnded = auction.status === "ended" || new Date(auction.endsAt).getTime() <= Date.now();
 
-  function placeBid(amount: number, isBuyNow = false) {
+  async function placeBid(amount: number, isBuyNow = false) {
     if (isEnded) return;
-    toast.success(
-      isBuyNow
-        ? `Comprar Já confirmado por ${formatEUR(amount)}`
-        : `Lance de ${formatEUR(amount)} submetido`,
-      { description: "Demo — backend ainda não está ligado." },
-    );
-    setCustom("");
+
+    setIsSubmitting(true);
+
+    try {
+      await placeAuctionBid({ auctionId: auction.id, amount, isBuyNow });
+      toast.success(
+        isBuyNow
+          ? `Comprar Já confirmado por ${formatEUR(amount)}`
+          : `Lance de ${formatEUR(amount)} submetido`,
+      );
+      setCustom("");
+      await onBidPlaced?.();
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível submeter o lance.", {
+        description:
+          error instanceof Error ? error.message : "Tente novamente dentro de instantes.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleQuick(inc: number) {
-    placeBid(auction.currentPrice + inc);
+    void placeBid(auction.currentPrice + inc);
   }
 
   function handleCustom() {
@@ -35,7 +51,7 @@ export function BidPanel({ auction }: Props) {
       });
       return;
     }
-    placeBid(value * 100);
+    void placeBid(value * 100);
   }
 
   return (
@@ -74,7 +90,8 @@ export function BidPanel({ auction }: Props) {
               <button
                 key={inc}
                 onClick={() => handleQuick(inc)}
-                className="border border-border py-2 text-xs font-bold transition-colors hover:bg-muted"
+                disabled={isSubmitting}
+                className="border border-border py-2 text-xs font-bold transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
               >
                 +{formatEUR(inc)}
               </button>
@@ -93,14 +110,16 @@ export function BidPanel({ auction }: Props) {
           </div>
           <button
             onClick={handleCustom}
-            className="w-full bg-primary py-4 text-sm font-bold uppercase tracking-widest text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98]"
+            disabled={isSubmitting}
+            className="w-full bg-primary py-4 text-sm font-bold uppercase tracking-widest text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Efetuar licitação
+            {isSubmitting ? "A submeter..." : "Efetuar licitação"}
           </button>
           {auction.buyNowPrice && (
             <button
-              onClick={() => placeBid(auction.buyNowPrice!, true)}
-              className="w-full border-2 border-foreground py-3 text-sm font-bold uppercase transition-colors hover:bg-muted"
+              onClick={() => void placeBid(auction.buyNowPrice!, true)}
+              disabled={isSubmitting}
+              className="w-full border-2 border-foreground py-3 text-sm font-bold uppercase transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
             >
               Comprar já: {formatEUR(auction.buyNowPrice)}
             </button>
