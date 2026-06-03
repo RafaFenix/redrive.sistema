@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { vehicles, formatNumber } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import { formatNumber, listAdminVehicles, Vehicle } from "@/lib/market-data";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/vehicles/")({
   head: () => ({ meta: [{ title: "Viaturas — Admin" }] }),
@@ -8,14 +10,38 @@ export const Route = createFileRoute("/admin/vehicles/")({
 });
 
 function AdminVehicles() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadVehicles() {
+      try {
+        const data = await listAdminVehicles();
+        setVehicles(data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Não foi possível carregar viaturas.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadVehicles();
+  }, []);
+
   return (
     <div className="p-8">
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Viaturas</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{vehicles.length} viaturas no inventário</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {vehicles.length} viaturas no inventário
+          </p>
         </div>
-        <Link to="/admin/vehicles/new" className="inline-flex items-center gap-2 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90">
+        <Link
+          to="/admin/vehicles/new"
+          className="inline-flex items-center gap-2 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90"
+        >
           <Plus className="size-3.5" />
           Nova viatura
         </Link>
@@ -34,20 +60,39 @@ function AdminVehicles() {
             </tr>
           </thead>
           <tbody>
+            {isLoading && (
+              <tr>
+                <td colSpan={6} className="p-12 text-center text-muted-foreground">
+                  A carregar viaturas...
+                </td>
+              </tr>
+            )}
             {vehicles.map((v) => (
               <tr key={v.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                 <td className="px-4 py-3 font-mono text-xs">{v.id}</td>
-                <td className="px-4 py-3 font-medium">{v.year} {v.make} {v.model} <span className="text-muted-foreground">— {v.variant}</span></td>
+                <td className="px-4 py-3 font-medium">
+                  {v.year} {v.make} {v.model}{" "}
+                  <span className="text-muted-foreground">— {v.variant}</span>
+                </td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{v.vin}</td>
                 <td className="px-4 py-3 font-mono">{formatNumber(v.mileage)}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={v.status} />
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button className="text-xs font-semibold underline-offset-4 hover:underline">Editar</button>
+                  <button className="text-xs font-semibold underline-offset-4 hover:underline">
+                    Editar
+                  </button>
                 </td>
               </tr>
             ))}
+            {!isLoading && vehicles.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-12 text-center text-muted-foreground">
+                  Ainda não existem viaturas.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -63,7 +108,9 @@ function StatusBadge({ status }: { status: string }) {
     archived: "bg-muted text-muted-foreground",
   };
   return (
-    <span className={`inline-block rounded-sm px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${map[status] ?? "bg-muted"}`}>
+    <span
+      className={`inline-block rounded-sm px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${map[status] ?? "bg-muted"}`}
+    >
       {status}
     </span>
   );

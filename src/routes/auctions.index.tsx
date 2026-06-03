@@ -2,35 +2,41 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
-import { auctions, getVehicle } from "@/lib/mock-data";
+import { listPublicAuctions } from "@/lib/market-data";
 
 export const Route = createFileRoute("/auctions/")({
+  loader: () => listPublicAuctions(),
   head: () => ({
     meta: [
       { title: "Leilões ativos — ReDrive" },
-      { name: "description", content: "Veja todas as viaturas em leilão na ReDrive: BMW, Mercedes, Audi, VW e mais." },
+      {
+        name: "description",
+        content: "Veja todas as viaturas em leilão na ReDrive: BMW, Mercedes, Audi, VW e mais.",
+      },
     ],
   }),
   component: AuctionsList,
 });
 
 function AuctionsList() {
+  const auctions = Route.useLoaderData();
   const [make, setMake] = useState<string>("all");
   const [fuel, setFuel] = useState<string>("all");
   const [status, setStatus] = useState<string>("active");
 
   const makes = useMemo(() => {
-    const s = new Set<string>();
-    auctions.forEach((a) => {
-      const v = getVehicle(a.vehicleId);
-      if (v) s.add(v.make);
-    });
-    return Array.from(s).sort();
-  }, []);
+    const vehicleMakes = new Set(auctions.map((auction) => auction.vehicle?.make).filter(Boolean));
+    return Array.from(vehicleMakes).sort();
+  }, [auctions]);
+
+  const fuels = useMemo(() => {
+    const fuelTypes = new Set(auctions.map((auction) => auction.vehicle?.fuelType).filter(Boolean));
+    return Array.from(fuelTypes).sort();
+  }, [auctions]);
 
   const filtered = auctions.filter((a) => {
     if (status !== "all" && a.status !== status) return false;
-    const v = getVehicle(a.vehicleId);
+    const v = a.vehicle;
     if (!v) return false;
     if (make !== "all" && v.make !== make) return false;
     if (fuel !== "all" && v.fuelType !== fuel) return false;
@@ -55,26 +61,42 @@ function AuctionsList() {
 
         {/* Filters */}
         <div className="mb-8 grid grid-cols-2 gap-3 border border-border bg-card p-4 md:grid-cols-4">
-          <Select label="Estado" value={status} onChange={setStatus} options={[
-            { value: "all", label: "Todos" },
-            { value: "active", label: "Ao vivo" },
-            { value: "scheduled", label: "Em breve" },
-            { value: "ended", label: "Terminados" },
-          ]} />
-          <Select label="Marca" value={make} onChange={setMake} options={[
-            { value: "all", label: "Todas" },
-            ...makes.map((m) => ({ value: m, label: m })),
-          ]} />
-          <Select label="Combustível" value={fuel} onChange={setFuel} options={[
-            { value: "all", label: "Todos" },
-            { value: "Gasolina", label: "Gasolina" },
-            { value: "Gasóleo", label: "Gasóleo" },
-            { value: "Elétrico", label: "Elétrico" },
-            { value: "Híbrido", label: "Híbrido" },
-          ]} />
+          <Select
+            label="Estado"
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: "all", label: "Todos" },
+              { value: "active", label: "Ao vivo" },
+              { value: "scheduled", label: "Em breve" },
+              { value: "ended", label: "Terminados" },
+            ]}
+          />
+          <Select
+            label="Marca"
+            value={make}
+            onChange={setMake}
+            options={[
+              { value: "all", label: "Todas" },
+              ...makes.map((m) => ({ value: m, label: m })),
+            ]}
+          />
+          <Select
+            label="Combustível"
+            value={fuel}
+            onChange={setFuel}
+            options={[
+              { value: "all", label: "Todos" },
+              ...fuels.map((fuelType) => ({ value: fuelType, label: fuelType })),
+            ]}
+          />
           <div className="flex items-end">
             <button
-              onClick={() => { setMake("all"); setFuel("all"); setStatus("active"); }}
+              onClick={() => {
+                setMake("all");
+                setFuel("all");
+                setStatus("active");
+              }}
               className="w-full border border-border py-2 text-xs font-bold uppercase tracking-wider hover:bg-muted"
             >
               Limpar filtros
@@ -89,7 +111,7 @@ function AuctionsList() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((a) => (
-              <VehicleCard key={a.id} auction={a} />
+              <VehicleCard key={a.id} auction={a} vehicle={a.vehicle} />
             ))}
           </div>
         )}
@@ -98,17 +120,31 @@ function AuctionsList() {
   );
 }
 
-function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
         ))}
       </select>
     </label>

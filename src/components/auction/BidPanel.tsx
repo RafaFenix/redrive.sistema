@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Auction, formatEUR } from "@/lib/mock-data";
+import { Auction, formatEUR } from "@/lib/market-data";
 import { ReserveIndicator } from "./ReserveIndicator";
 import { AuctionTimer } from "./AuctionTimer";
 import { toast } from "sonner";
@@ -57,7 +57,9 @@ export function BidPanel({ auction }: Props) {
           Lance atual
         </span>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-extrabold tracking-tight">{formatEUR(auction.currentPrice)}</span>
+          <span className="text-4xl font-extrabold tracking-tight">
+            {formatEUR(auction.currentPrice)}
+          </span>
           <span className="text-xs text-muted-foreground">+ Taxas</span>
         </div>
         <div className="mt-1 font-mono text-[10px] text-muted-foreground">

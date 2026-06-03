@@ -1,0 +1,333 @@
+import { getSupabaseClient } from "@/lib/supabase/client";
+
+export type VehicleStatus = "draft" | "active" | "sold" | "archived";
+export type AuctionStatus = "scheduled" | "active" | "ended" | "cancelled";
+export type AuctionMode = "standard" | "blind";
+export type BidStatus = "active" | "outbid" | "won" | "cancelled";
+
+export interface Vehicle {
+  id: string;
+  status: VehicleStatus;
+  make: string;
+  model: string;
+  variant: string;
+  year: number;
+  mileage: number;
+  color: string;
+  fuelType: string;
+  transmission: string;
+  power: string;
+  doors: number;
+  condition: string;
+  description: string;
+  vin?: string | null;
+  originPlate?: string | null;
+  photos: string[];
+  damageReportUrl: string;
+  additionalServices: { name: string; price: number }[];
+  legalizationCost: number;
+  marketPriceRef?: number | null;
+  leadTimeDays?: number | null;
+}
+
+export interface Auction {
+  id: string;
+  lotNumber: string;
+  vehicleId: string;
+  status: AuctionStatus;
+  mode?: AuctionMode;
+  startingPrice: number;
+  reservePrice?: number;
+  buyNowPrice: number | null;
+  currentPrice: number;
+  bidIncrements: number[];
+  startsAt: string;
+  endsAt: string;
+  reserveMet: boolean;
+  bidCount: number;
+  viewerCount: number;
+  vehicle?: Vehicle;
+}
+
+export interface Bid {
+  id: string;
+  auctionId: string;
+  bidderId: string;
+  bidderHint: string;
+  amount: number;
+  status: BidStatus;
+  isBuyNow: boolean;
+  createdAt: string;
+}
+
+type VehicleRow = {
+  id: string;
+  status: VehicleStatus;
+  make: string;
+  model: string;
+  variant: string | null;
+  year: number;
+  mileage: number;
+  color: string | null;
+  fuel_type: string | null;
+  transmission: string | null;
+  power_cv: number | null;
+  doors: number | null;
+  condition: string | null;
+  description: string | null;
+  vin?: string | null;
+  origin_plate?: string | null;
+  photos: string[] | null;
+  damage_report_path?: string | null;
+  has_damage_report?: boolean | null;
+  additional_services: { name: string; price: number }[] | null;
+  legalization_cost: number;
+  market_price_ref?: number | null;
+  lead_time_days?: number | null;
+};
+
+type AuctionRow = {
+  id: string;
+  lot_number: string;
+  vehicle_id: string;
+  status: AuctionStatus;
+  mode: AuctionMode;
+  starting_price: number;
+  reserve_price?: number;
+  buy_now_price: number | null;
+  current_price: number;
+  bid_increments: number[] | null;
+  starts_at: string;
+  ends_at: string;
+  reserve_met?: boolean | null;
+  bid_count: number;
+  viewer_count: number;
+};
+
+type BidRow = {
+  id: string;
+  auction_id: string;
+  bidder_id: string;
+  amount: number;
+  status: BidStatus;
+  is_buy_now: boolean;
+  created_at: string;
+};
+
+export function formatEUR(cents: number): string {
+  return new Intl.NumberFormat("pt-PT", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat("pt-PT").format(value);
+}
+
+export function euroToCents(value: FormDataEntryValue | null): number | null {
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(",", ".");
+
+  if (!normalized) return null;
+
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount)) return null;
+
+  return Math.round(amount * 100);
+}
+
+export function mapVehicle(row: VehicleRow): Vehicle {
+  return {
+    id: row.id,
+    status: row.status,
+    make: row.make,
+    model: row.model,
+    variant: row.variant ?? "",
+    year: row.year,
+    mileage: row.mileage,
+    color: row.color ?? "—",
+    fuelType: row.fuel_type ?? "—",
+    transmission: row.transmission ?? "—",
+    power: row.power_cv ? `${row.power_cv} cv` : "—",
+    doors: row.doors ?? 0,
+    condition: row.condition ?? "—",
+    description: row.description ?? "",
+    vin: row.vin,
+    originPlate: row.origin_plate,
+    photos: row.photos?.length ? row.photos : ["/placeholder.svg"],
+    damageReportUrl: row.damage_report_path ?? "#",
+    additionalServices: row.additional_services ?? [],
+    legalizationCost: row.legalization_cost,
+    marketPriceRef: row.market_price_ref,
+    leadTimeDays: row.lead_time_days,
+  };
+}
+
+export function mapAuction(row: AuctionRow): Auction {
+  return {
+    id: row.id,
+    lotNumber: row.lot_number,
+    vehicleId: row.vehicle_id,
+    status: row.status,
+    mode: row.mode,
+    startingPrice: row.starting_price,
+    reservePrice: row.reserve_price,
+    buyNowPrice: row.buy_now_price,
+    currentPrice: row.current_price,
+    bidIncrements: row.bid_increments?.length ? row.bid_increments : [10000, 20000, 50000],
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    reserveMet:
+      row.reserve_met ?? Boolean(row.reserve_price && row.current_price >= row.reserve_price),
+    bidCount: row.bid_count,
+    viewerCount: row.viewer_count,
+  };
+}
+
+export function mapBid(row: BidRow, index: number): Bid {
+  return {
+    id: row.id,
+    auctionId: row.auction_id,
+    bidderId: row.bidder_id,
+    bidderHint: `Comprador ${String(index + 1).padStart(2, "0")}`,
+    amount: row.amount,
+    status: row.status,
+    isBuyNow: row.is_buy_now,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listAdminVehicles() {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("vehicles")
+    .select(
+      "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return ((data ?? []) as VehicleRow[]).map(mapVehicle);
+}
+
+export async function listAdminAuctions() {
+  const supabase = getSupabaseClient();
+  const [{ data: auctionRows, error: auctionsError }, { data: vehicleRows, error: vehiclesError }] =
+    await Promise.all([
+      supabase
+        .from("auctions")
+        .select(
+          "id,lot_number,vehicle_id,status,mode,starting_price,reserve_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count",
+        )
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("vehicles")
+        .select(
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+        ),
+    ]);
+
+  if (auctionsError) throw auctionsError;
+  if (vehiclesError) throw vehiclesError;
+
+  const vehiclesById = new Map(
+    ((vehicleRows ?? []) as VehicleRow[]).map((row) => [row.id, mapVehicle(row)]),
+  );
+  return ((auctionRows ?? []) as AuctionRow[]).map((row) => ({
+    ...mapAuction(row),
+    vehicle: vehiclesById.get(row.vehicle_id),
+  }));
+}
+
+export async function listPublicAuctions() {
+  const supabase = getSupabaseClient();
+  const [{ data: auctionRows, error: auctionsError }, { data: vehicleRows, error: vehiclesError }] =
+    await Promise.all([
+      supabase
+        .from("public_auctions")
+        .select(
+          "id,lot_number,vehicle_id,status,mode,starting_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count,reserve_met",
+        )
+        .order("ends_at", { ascending: true }),
+      supabase
+        .from("public_vehicles")
+        .select(
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+        ),
+    ]);
+
+  if (auctionsError) throw auctionsError;
+  if (vehiclesError) throw vehiclesError;
+
+  const vehiclesById = new Map(
+    ((vehicleRows ?? []) as VehicleRow[]).map((row) => [row.id, mapVehicle(row)]),
+  );
+  return ((auctionRows ?? []) as AuctionRow[])
+    .map((row) => ({ ...mapAuction(row), vehicle: vehiclesById.get(row.vehicle_id) }))
+    .filter((auction) => auction.vehicle);
+}
+
+export async function getPublicAuction(id: string) {
+  const supabase = getSupabaseClient();
+  const { data: auctionRow, error: auctionError } = await supabase
+    .from("public_auctions")
+    .select(
+      "id,lot_number,vehicle_id,status,mode,starting_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count,reserve_met",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (auctionError) throw auctionError;
+  if (!auctionRow) return null;
+
+  const auction = mapAuction(auctionRow as AuctionRow);
+  const [{ data: vehicleRow, error: vehicleError }, { data: bidRows, error: bidsError }] =
+    await Promise.all([
+      supabase
+        .from("public_vehicles")
+        .select(
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+        )
+        .eq("id", auction.vehicleId)
+        .maybeSingle(),
+      supabase
+        .from("bids")
+        .select("id,auction_id,bidder_id,amount,status,is_buy_now,created_at")
+        .eq("auction_id", id)
+        .order("amount", { ascending: false }),
+    ]);
+
+  if (vehicleError) throw vehicleError;
+  if (!vehicleRow) return null;
+
+  return {
+    auction,
+    vehicle: mapVehicle(vehicleRow as VehicleRow),
+    bids: bidsError ? [] : ((bidRows ?? []) as BidRow[]).map(mapBid),
+  };
+}
+
+export function parseInteger(value: FormDataEntryValue | null): number | null {
+  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function parsePhotoUrls(value: FormDataEntryValue | null): string[] {
+  return String(value ?? "")
+    .split(/[\n,]/)
+    .map((url) => url.trim())
+    .filter(Boolean);
+}
+
+export function parseBidIncrements(value: FormDataEntryValue | null): number[] {
+  const increments = String(value ?? "")
+    .split(",")
+    .map((item) => Number.parseInt(item.trim(), 10))
+    .filter((item) => Number.isFinite(item) && item > 0);
+
+  return increments.length ? increments : [10000, 20000, 50000];
+}

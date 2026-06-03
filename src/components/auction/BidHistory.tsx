@@ -1,4 +1,4 @@
-import { Bid, formatEUR, getProfile } from "@/lib/mock-data";
+import { Bid, formatEUR } from "@/lib/market-data";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -8,7 +8,11 @@ interface Props {
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return new Date(iso).toLocaleTimeString("pt-PT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 export function BidHistory({ bids, showIdentity = false, className }: Props) {
@@ -30,7 +34,7 @@ export function BidHistory({ bids, showIdentity = false, className }: Props) {
       </h4>
       <div className="space-y-3">
         {bids.slice(0, 8).map((b, i) => {
-          const identity = showIdentity ? getProfile(b.bidderId)?.companyName ?? b.bidderHint : b.bidderHint;
+          const identity = b.bidderHint;
           return (
             <div
               key={b.id}

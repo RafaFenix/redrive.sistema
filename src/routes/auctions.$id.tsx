@@ -3,23 +3,29 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleGallery } from "@/components/vehicle/VehicleGallery";
 import { BidPanel } from "@/components/auction/BidPanel";
 import { BidHistory } from "@/components/auction/BidHistory";
-import { getAuction, getVehicle, getBidsForAuction, formatNumber, formatEUR } from "@/lib/mock-data";
+import { formatEUR, formatNumber, getPublicAuction } from "@/lib/market-data";
 import { FileText, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/auctions/$id")({
-  loader: ({ params }) => {
-    const auction = getAuction(params.id);
-    if (!auction) throw notFound();
-    const vehicle = getVehicle(auction.vehicleId);
-    if (!vehicle) throw notFound();
-    return { auction, vehicle };
+  loader: async ({ params }) => {
+    const auctionData = await getPublicAuction(params.id);
+    if (!auctionData) throw notFound();
+    return auctionData;
   },
   head: ({ loaderData }) => ({
     meta: loaderData
       ? [
-          { title: `${loaderData.vehicle.year} ${loaderData.vehicle.make} ${loaderData.vehicle.model} — ReDrive` },
-          { name: "description", content: `Leilão do lote ${loaderData.auction.lotNumber}: ${loaderData.vehicle.make} ${loaderData.vehicle.model} ${loaderData.vehicle.variant}, ${formatNumber(loaderData.vehicle.mileage)} km.` },
-          { property: "og:title", content: `${loaderData.vehicle.make} ${loaderData.vehicle.model} — Leilão ReDrive` },
+          {
+            title: `${loaderData.vehicle.year} ${loaderData.vehicle.make} ${loaderData.vehicle.model} — ReDrive`,
+          },
+          {
+            name: "description",
+            content: `Leilão do lote ${loaderData.auction.lotNumber}: ${loaderData.vehicle.make} ${loaderData.vehicle.model} ${loaderData.vehicle.variant}, ${formatNumber(loaderData.vehicle.mileage)} km.`,
+          },
+          {
+            property: "og:title",
+            content: `${loaderData.vehicle.make} ${loaderData.vehicle.model} — Leilão ReDrive`,
+          },
           { property: "og:image", content: loaderData.vehicle.photos[0] },
         ]
       : [],
@@ -34,8 +40,8 @@ export const Route = createFileRoute("/auctions/$id")({
 });
 
 function AuctionDetail() {
-  const { auction, vehicle } = Route.useLoaderData();
-  const auctionBids = getBidsForAuction(auction.id);
+  const { auction, vehicle, bids } = Route.useLoaderData();
+  const hasDamageReport = vehicle.damageReportUrl !== "#";
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,10 +60,12 @@ function AuctionDetail() {
               {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.variant}
             </h1>
             <div className="flex gap-2">
-              <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase text-primary">
-                <AlertTriangle className="size-3" />
-                Relatório de danos disponível
-              </span>
+              {hasDamageReport && (
+                <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase text-primary">
+                  <AlertTriangle className="size-3" />
+                  Relatório de danos disponível
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -93,25 +101,27 @@ function AuctionDetail() {
             </div>
 
             {/* Damage report */}
-            <div className="rounded-sm border border-border bg-card p-6 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Relatório de danos
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Inspeção certificada de 150 pontos · PDF
-                  </p>
+            {hasDamageReport && (
+              <div className="rounded-sm border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Relatório de danos
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Inspeção certificada de 150 pontos · PDF
+                    </p>
+                  </div>
+                  <a
+                    href={vehicle.damageReportUrl}
+                    className="inline-flex items-center gap-2 border border-foreground px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-foreground hover:text-background"
+                  >
+                    <FileText className="size-3.5" />
+                    Ver PDF
+                  </a>
                 </div>
-                <a
-                  href={vehicle.damageReportUrl}
-                  className="inline-flex items-center gap-2 border border-foreground px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-foreground hover:text-background"
-                >
-                  <FileText className="size-3.5" />
-                  Ver PDF
-                </a>
               </div>
-            </div>
+            )}
 
             {/* Additional services */}
             {vehicle.additionalServices.length > 0 && (
@@ -128,7 +138,9 @@ function AuctionDetail() {
                   ))}
                   <li className="flex items-center justify-between py-3 text-sm">
                     <span className="font-medium">Legalização</span>
-                    <span className="font-mono font-bold">{formatEUR(vehicle.legalizationCost)}</span>
+                    <span className="font-mono font-bold">
+                      {formatEUR(vehicle.legalizationCost)}
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -139,7 +151,7 @@ function AuctionDetail() {
           <div className="lg:col-span-4">
             <div className="sticky top-20 space-y-4">
               <BidPanel auction={auction} />
-              <BidHistory bids={auctionBids} />
+              <BidHistory bids={bids} />
             </div>
           </div>
         </div>

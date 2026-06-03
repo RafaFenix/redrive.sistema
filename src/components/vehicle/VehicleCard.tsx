@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Auction, Vehicle, formatEUR, formatNumber, getVehicle } from "@/lib/mock-data";
+import { Auction, Vehicle, formatEUR, formatNumber } from "@/lib/market-data";
 import { AuctionTimer } from "@/components/auction/AuctionTimer";
 import { ReserveIndicator } from "@/components/auction/ReserveIndicator";
 
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function VehicleCard({ auction, vehicle }: Props) {
-  const v = vehicle ?? getVehicle(auction.vehicleId);
+  const v = vehicle ?? auction.vehicle;
   if (!v) return null;
 
   return (
@@ -32,7 +32,11 @@ export function VehicleCard({ auction, vehicle }: Props) {
         </div>
         <div className="absolute right-2 top-2">
           <span className="rounded-sm bg-foreground/90 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-background backdrop-blur">
-            {auction.status === "scheduled" ? "Em breve" : auction.status === "ended" ? "Terminado" : "Ao vivo"}
+            {auction.status === "scheduled"
+              ? "Em breve"
+              : auction.status === "ended"
+                ? "Terminado"
+                : "Ao vivo"}
           </span>
         </div>
       </div>
@@ -58,14 +62,20 @@ export function VehicleCard({ auction, vehicle }: Props) {
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               Lance atual
             </span>
-            <div className="text-lg font-extrabold tracking-tight">{formatEUR(auction.currentPrice)}</div>
+            <div className="text-lg font-extrabold tracking-tight">
+              {formatEUR(auction.currentPrice)}
+            </div>
           </div>
           <div className="text-right">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {auction.status === "scheduled" ? "Inicia" : "Termina"}
             </span>
             <div>
-              <AuctionTimer endsAt={auction.status === "scheduled" ? auction.startsAt : auction.endsAt} status={auction.status} size="sm" />
+              <AuctionTimer
+                endsAt={auction.status === "scheduled" ? auction.startsAt : auction.endsAt}
+                status={auction.status}
+                size="sm"
+              />
             </div>
           </div>
         </div>
