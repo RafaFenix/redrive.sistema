@@ -5,7 +5,14 @@ import { listPublicAuctions } from "@/lib/market-data";
 import { ArrowRight, ShieldCheck, Gavel, Truck } from "lucide-react";
 
 export const Route = createFileRoute("/")({
-  loader: () => listPublicAuctions(),
+  loader: async () => {
+    try {
+      return await listPublicAuctions();
+    } catch (error) {
+      console.error("Failed to load public auctions for landing page", error);
+      return [];
+    }
+  },
   head: () => ({
     meta: [
       { title: "ReDrive — Leilão Automóvel B2B" },

@@ -5,7 +5,14 @@ import { VehicleCard } from "@/components/vehicle/VehicleCard";
 import { listPublicAuctions } from "@/lib/market-data";
 
 export const Route = createFileRoute("/auctions/")({
-  loader: () => listPublicAuctions(),
+  loader: async () => {
+    try {
+      return await listPublicAuctions();
+    } catch (error) {
+      console.error("Failed to load public auctions catalog", error);
+      return [];
+    }
+  },
   head: () => ({
     meta: [
       { title: "Leilões ativos — ReDrive" },
