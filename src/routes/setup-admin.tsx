@@ -69,8 +69,8 @@ function SetupAdminPage() {
         </div>
         <h1 className="mt-6 text-3xl font-extrabold tracking-tight">Configurar primeiro admin</h1>
         <p className="mt-3 max-w-prose text-sm text-muted-foreground">
-          Use esta página apenas no arranque do projeto. O banco só permite esta ação se ainda não
-          existir nenhum administrador.
+          Use esta página apenas no arranque do projeto. O banco só permite esta ação para
+          plusroimkd@gmail.com se ainda não existir nenhum administrador.
         </p>
 
         <div className="mt-8 w-full border border-border bg-card p-6 text-left">
