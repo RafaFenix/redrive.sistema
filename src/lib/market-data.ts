@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "@/lib/supabase/client";
+import type { AppRole, UserStatus } from "@/lib/auth-client";
 
 export type VehicleStatus = "draft" | "active" | "sold" | "archived";
 export type AuctionStatus = "scheduled" | "active" | "ended" | "cancelled";
@@ -154,6 +155,43 @@ export interface AppNotification {
   createdAt: string;
 }
 
+export type VehicleDocumentUploadKind = "damage" | "appraisal" | "service" | "coc";
+
+export interface BuyerWatchlistItem {
+  id: string;
+  auctionId: string;
+  createdAt: string;
+  auction?: Auction;
+}
+
+export interface AuctionWatcher {
+  id: string;
+  companyName: string;
+  contactName: string;
+  contactPhone: string;
+  createdAt: string;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  status: UserStatus;
+  companyName: string;
+  vatNumber: string;
+  contactName: string;
+  contactPhone: string;
+  address: string;
+  city: string;
+  country: string;
+  tradeRegistryPath: string | null;
+  rejectedReason: string;
+  suspendedReason: string;
+  approvedAt: string | null;
+  createdAt: string;
+  roles: AppRole[];
+  bids: BuyerBid[];
+  orders: BuyerOrder[];
+}
+
 type VehicleRow = {
   id: string;
   status: VehicleStatus;
@@ -243,6 +281,30 @@ type NotificationRow = {
   body: string | null;
   data: Record<string, unknown> | null;
   read_at: string | null;
+  created_at: string;
+};
+
+type WatchlistRow = {
+  id: string;
+  user_id: string;
+  auction_id: string;
+  created_at: string;
+};
+
+type ProfileRow = {
+  id: string;
+  status: UserStatus;
+  company_name: string | null;
+  vat_number: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  city: string | null;
+  country: string | null;
+  trade_registry_path: string | null;
+  rejected_reason: string | null;
+  suspended_reason: string | null;
+  approved_at: string | null;
   created_at: string;
 };
 
@@ -392,6 +454,28 @@ export function mapNotification(row: NotificationRow): AppNotification {
     data: row.data ?? {},
     readAt: row.read_at,
     createdAt: row.created_at,
+  };
+}
+
+function mapProfile(row: ProfileRow, roles: AppRole[] = []): AdminUserDetail {
+  return {
+    id: row.id,
+    status: row.status,
+    companyName: row.company_name ?? "",
+    vatNumber: row.vat_number ?? "",
+    contactName: row.contact_name ?? "",
+    contactPhone: row.contact_phone ?? "",
+    address: row.address ?? "",
+    city: row.city ?? "",
+    country: row.country ?? "PT",
+    tradeRegistryPath: row.trade_registry_path,
+    rejectedReason: row.rejected_reason ?? "",
+    suspendedReason: row.suspended_reason ?? "",
+    approvedAt: row.approved_at,
+    createdAt: row.created_at,
+    roles,
+    bids: [],
+    orders: [],
   };
 }
 
@@ -1028,6 +1112,10 @@ export async function markAllNotificationsRead() {
   if (error) throw error;
 }
 
+export function listAllNotifications() {
+  return listNotifications(100);
+}
+
 export async function getWatchlistAuctionIds() {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase.from("watchlist").select("auction_id");
@@ -1089,6 +1177,247 @@ export async function toggleAuctionWatchlist(auctionId: string) {
 
   if (error) throw error;
   return true;
+}
+
+export async function listBuyerWatchlistAuctions(): Promise<BuyerWatchlistItem[]> {
+  const supabase = getSupabaseClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) return [];
+
+  const { data: watchRows, error: watchError } = await supabase
+    .from("watchlist")
+    .select("id,user_id,auction_id,created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (watchError) throw watchError;
+  if (!watchRows?.length) return [];
+
+  const watchlist = watchRows as WatchlistRow[];
+  const auctionIds = watchlist.map((row) => row.auction_id);
+  const [{ data: auctionRows, error: auctionsError }, { data: vehicleRows, error: vehiclesError }] =
+    await Promise.all([
+      supabase
+        .from("public_auctions")
+        .select(
+          "id,lot_number,vehicle_id,status,mode,starting_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count,reserve_met",
+        )
+        .in("id", auctionIds),
+      supabase
+        .from("public_vehicles")
+        .select(
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
+        ),
+    ]);
+
+  if (auctionsError) throw auctionsError;
+  if (vehiclesError) throw vehiclesError;
+
+  const vehiclesById = new Map(
+    ((vehicleRows ?? []) as VehicleRow[]).map((row) => [row.id, mapVehicle(row)]),
+  );
+  const auctionsById = new Map(
+    ((auctionRows ?? []) as AuctionRow[]).map((row) => [
+      row.id,
+      { ...mapAuction(row), vehicle: vehiclesById.get(row.vehicle_id) },
+    ]),
+  );
+
+  return watchlist.map((row) => ({
+    id: row.id,
+    auctionId: row.auction_id,
+    createdAt: row.created_at,
+    auction: auctionsById.get(row.auction_id),
+  }));
+}
+
+export async function listAuctionWatchers(auctionId: string): Promise<AuctionWatcher[]> {
+  const supabase = getSupabaseClient();
+  const { data: watchRows, error: watchError } = await supabase
+    .from("watchlist")
+    .select("user_id,created_at")
+    .eq("auction_id", auctionId)
+    .order("created_at", { ascending: false });
+
+  if (watchError) throw watchError;
+  if (!watchRows?.length) return [];
+
+  const userIds = watchRows.map((row) => row.user_id as string);
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id,company_name,contact_name,contact_phone")
+    .in("id", userIds);
+
+  if (profilesError) throw profilesError;
+
+  const profilesById = new Map(
+    (profiles ?? []).map((profile) => [
+      profile.id as string,
+      {
+        companyName: (profile.company_name as string | null) ?? "",
+        contactName: (profile.contact_name as string | null) ?? "",
+        contactPhone: (profile.contact_phone as string | null) ?? "",
+      },
+    ]),
+  );
+
+  return watchRows.map((row) => {
+    const profile = profilesById.get(row.user_id as string);
+    return {
+      id: row.user_id as string,
+      companyName: profile?.companyName || "Comprador",
+      contactName: profile?.contactName || "",
+      contactPhone: profile?.contactPhone || "",
+      createdAt: row.created_at as string,
+    };
+  });
+}
+
+export async function getAdminUserDetail(userId: string): Promise<AdminUserDetail | null> {
+  const supabase = getSupabaseClient();
+  const [
+    { data: profile, error: profileError },
+    { data: roleRows, error: rolesError },
+    { data: bidRows, error: bidsError },
+    { data: orderRows, error: ordersError },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "id,status,company_name,vat_number,contact_name,contact_phone,address,city,country,trade_registry_path,rejected_reason,suspended_reason,approved_at,created_at",
+      )
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase
+      .from("bids")
+      .select("id,auction_id,bidder_id,amount,status,is_buy_now,created_at")
+      .eq("bidder_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("orders")
+      .select(
+        "id,auction_id,buyer_id,vehicle_id,winning_bid_id,amount,status,delivery_status,deposit_amount,delivery_notes,created_at,updated_at",
+      )
+      .eq("buyer_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(10),
+  ]);
+
+  if (profileError) throw profileError;
+  if (rolesError) throw rolesError;
+  if (bidsError) throw bidsError;
+  if (ordersError) throw ordersError;
+  if (!profile) return null;
+
+  const detail = mapProfile(
+    profile as ProfileRow,
+    (roleRows ?? []).map((row) => row.role as AppRole),
+  );
+
+  const auctionIds = [
+    ...new Set([
+      ...(bidRows ?? []).map((row) => row.auction_id as string),
+      ...(orderRows ?? []).map((row) => row.auction_id as string),
+    ]),
+  ];
+  const vehicleIds = [...new Set((orderRows ?? []).map((row) => row.vehicle_id as string))];
+
+  const [{ data: auctionRows, error: auctionsError }, { data: vehicleRows, error: vehiclesError }] =
+    await Promise.all([
+      auctionIds.length
+        ? supabase
+            .from("public_auctions")
+            .select(
+              "id,lot_number,vehicle_id,status,mode,starting_price,buy_now_price,current_price,bid_increments,starts_at,ends_at,bid_count,viewer_count,reserve_met",
+            )
+            .in("id", auctionIds)
+        : Promise.resolve({ data: [], error: null }),
+      vehicleIds.length
+        ? supabase
+            .from("public_vehicles")
+            .select(
+              "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
+            )
+            .in("id", vehicleIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  if (auctionsError) throw auctionsError;
+  if (vehiclesError) throw vehiclesError;
+
+  const vehiclesById = new Map(
+    ((vehicleRows ?? []) as VehicleRow[]).map((row) => [row.id, mapVehicle(row)]),
+  );
+  const auctionsById = new Map(
+    ((auctionRows ?? []) as AuctionRow[]).map((row) => [
+      row.id,
+      { ...mapAuction(row), vehicle: vehiclesById.get(row.vehicle_id) },
+    ]),
+  );
+
+  detail.bids = ((bidRows ?? []) as BidRow[]).map((row, index) => ({
+    ...mapBid(row, index, detail.companyName || "Comprador"),
+    auction: auctionsById.get(row.auction_id),
+  }));
+
+  detail.orders = ((orderRows ?? []) as OrderRow[]).map((row) => ({
+    ...mapOrder(row),
+    auction: auctionsById.get(row.auction_id),
+    vehicle: vehiclesById.get(row.vehicle_id),
+  }));
+
+  return detail;
+}
+
+export async function getTradeRegistrySignedUrl(path: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.storage
+    .from("trade-registry")
+    .createSignedUrl(path, 60 * 10);
+
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+export async function uploadVehiclePhoto(vehicleId: string, file: File) {
+  const supabase = getSupabaseClient();
+  const path = `vehicles/${vehicleId}/photos/${Date.now()}-${safeStorageFileName(file.name)}`;
+  const { error } = await supabase.storage.from("vehicle-photos").upload(path, file, {
+    upsert: false,
+    contentType: file.type || undefined,
+  });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from("vehicle-photos").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function uploadVehicleDocument(
+  vehicleId: string,
+  kind: VehicleDocumentUploadKind,
+  file: File,
+) {
+  const supabase = getSupabaseClient();
+  const path = `vehicles/${vehicleId}/documents/${kind}-${Date.now()}-${safeStorageFileName(file.name)}`;
+  const { error } = await supabase.storage.from("vehicle-documents").upload(path, file, {
+    upsert: false,
+    contentType: file.type || undefined,
+  });
+
+  if (error) throw error;
+  return path;
+}
+
+function safeStorageFileName(name: string) {
+  return name.replace(/[^a-z0-9._-]/gi, "-").toLowerCase();
 }
 
 export function parseInteger(value: FormDataEntryValue | null): number | null {

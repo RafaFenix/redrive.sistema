@@ -47,7 +47,7 @@ export function AdminSidebar() {
       <div className="space-y-2 border-t border-border p-3">
         <SidebarUserCard roleLabel="Admin" avatarClassName="bg-foreground text-background" />
         <div className="flex justify-end">
-          <NotificationBell />
+          <NotificationBell showAllLink={false} />
         </div>
       </div>
     </aside>

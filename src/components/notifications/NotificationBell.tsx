@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   AppNotification,
   listNotifications,
@@ -11,7 +12,7 @@ import { getSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export function NotificationBell() {
+export function NotificationBell({ showAllLink = true }: { showAllLink?: boolean }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -195,6 +196,18 @@ export function NotificationBell() {
               </div>
             )}
           </div>
+
+          {showAllLink && (
+            <div className="border-t border-border p-3">
+              <Link
+                to="/buyer/notifications"
+                onClick={() => setIsOpen(false)}
+                className="block text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+              >
+                Ver todas
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

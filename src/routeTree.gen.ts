@@ -20,6 +20,8 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuctionsIndexRouteImport } from './routes/auctions.index'
 import { Route as BuyerWonRouteImport } from './routes/buyer.won'
+import { Route as BuyerWatchlistRouteImport } from './routes/buyer.watchlist'
+import { Route as BuyerNotificationsRouteImport } from './routes/buyer.notifications'
 import { Route as BuyerNegotiationsRouteImport } from './routes/buyer.negotiations'
 import { Route as BuyerDashboardRouteImport } from './routes/buyer.dashboard'
 import { Route as BuyerBidsRouteImport } from './routes/buyer.bids'
@@ -32,6 +34,7 @@ import { Route as AdminAuctionsIndexRouteImport } from './routes/admin.auctions.
 import { Route as BuyerWonIdRouteImport } from './routes/buyer.won.$id'
 import { Route as AdminVehiclesNewRouteImport } from './routes/admin.vehicles.new'
 import { Route as AdminVehiclesIdRouteImport } from './routes/admin.vehicles.$id'
+import { Route as AdminUsersIdRouteImport } from './routes/admin.users.$id'
 import { Route as AdminAuctionsNewRouteImport } from './routes/admin.auctions.new'
 import { Route as AdminAuctionsIdRouteImport } from './routes/admin.auctions.$id'
 
@@ -88,6 +91,16 @@ const AuctionsIndexRoute = AuctionsIndexRouteImport.update({
 const BuyerWonRoute = BuyerWonRouteImport.update({
   id: '/won',
   path: '/won',
+  getParentRoute: () => BuyerRoute,
+} as any)
+const BuyerWatchlistRoute = BuyerWatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => BuyerRoute,
+} as any)
+const BuyerNotificationsRoute = BuyerNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => BuyerRoute,
 } as any)
 const BuyerNegotiationsRoute = BuyerNegotiationsRouteImport.update({
@@ -150,6 +163,11 @@ const AdminVehiclesIdRoute = AdminVehiclesIdRouteImport.update({
   path: '/vehicles/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminUsersIdRoute = AdminUsersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminUsersRoute,
+} as any)
 const AdminAuctionsNewRoute = AdminAuctionsNewRouteImport.update({
   id: '/auctions/new',
   path: '/auctions/new',
@@ -173,15 +191,18 @@ export interface FileRoutesByFullPath {
   '/setup-admin': typeof SetupAdminRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
-  '/admin/users': typeof AdminUsersRoute
+  '/admin/users': typeof AdminUsersRouteWithChildren
   '/auctions/$id': typeof AuctionsIdRoute
   '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
   '/buyer/negotiations': typeof BuyerNegotiationsRoute
+  '/buyer/notifications': typeof BuyerNotificationsRoute
+  '/buyer/watchlist': typeof BuyerWatchlistRoute
   '/buyer/won': typeof BuyerWonRouteWithChildren
   '/auctions/': typeof AuctionsIndexRoute
   '/admin/auctions/$id': typeof AdminAuctionsIdRoute
   '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
   '/admin/vehicles/$id': typeof AdminVehiclesIdRoute
   '/admin/vehicles/new': typeof AdminVehiclesNewRoute
   '/buyer/won/$id': typeof BuyerWonIdRoute
@@ -200,15 +221,18 @@ export interface FileRoutesByTo {
   '/setup-admin': typeof SetupAdminRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
-  '/admin/users': typeof AdminUsersRoute
+  '/admin/users': typeof AdminUsersRouteWithChildren
   '/auctions/$id': typeof AuctionsIdRoute
   '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
   '/buyer/negotiations': typeof BuyerNegotiationsRoute
+  '/buyer/notifications': typeof BuyerNotificationsRoute
+  '/buyer/watchlist': typeof BuyerWatchlistRoute
   '/buyer/won': typeof BuyerWonRouteWithChildren
   '/auctions': typeof AuctionsIndexRoute
   '/admin/auctions/$id': typeof AdminAuctionsIdRoute
   '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
   '/admin/vehicles/$id': typeof AdminVehiclesIdRoute
   '/admin/vehicles/new': typeof AdminVehiclesNewRoute
   '/buyer/won/$id': typeof BuyerWonIdRoute
@@ -228,15 +252,18 @@ export interface FileRoutesById {
   '/setup-admin': typeof SetupAdminRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/negotiations': typeof AdminNegotiationsRoute
-  '/admin/users': typeof AdminUsersRoute
+  '/admin/users': typeof AdminUsersRouteWithChildren
   '/auctions/$id': typeof AuctionsIdRoute
   '/buyer/bids': typeof BuyerBidsRoute
   '/buyer/dashboard': typeof BuyerDashboardRoute
   '/buyer/negotiations': typeof BuyerNegotiationsRoute
+  '/buyer/notifications': typeof BuyerNotificationsRoute
+  '/buyer/watchlist': typeof BuyerWatchlistRoute
   '/buyer/won': typeof BuyerWonRouteWithChildren
   '/auctions/': typeof AuctionsIndexRoute
   '/admin/auctions/$id': typeof AdminAuctionsIdRoute
   '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
   '/admin/vehicles/$id': typeof AdminVehiclesIdRoute
   '/admin/vehicles/new': typeof AdminVehiclesNewRoute
   '/buyer/won/$id': typeof BuyerWonIdRoute
@@ -262,10 +289,13 @@ export interface FileRouteTypes {
     | '/buyer/bids'
     | '/buyer/dashboard'
     | '/buyer/negotiations'
+    | '/buyer/notifications'
+    | '/buyer/watchlist'
     | '/buyer/won'
     | '/auctions/'
     | '/admin/auctions/$id'
     | '/admin/auctions/new'
+    | '/admin/users/$id'
     | '/admin/vehicles/$id'
     | '/admin/vehicles/new'
     | '/buyer/won/$id'
@@ -289,10 +319,13 @@ export interface FileRouteTypes {
     | '/buyer/bids'
     | '/buyer/dashboard'
     | '/buyer/negotiations'
+    | '/buyer/notifications'
+    | '/buyer/watchlist'
     | '/buyer/won'
     | '/auctions'
     | '/admin/auctions/$id'
     | '/admin/auctions/new'
+    | '/admin/users/$id'
     | '/admin/vehicles/$id'
     | '/admin/vehicles/new'
     | '/buyer/won/$id'
@@ -316,10 +349,13 @@ export interface FileRouteTypes {
     | '/buyer/bids'
     | '/buyer/dashboard'
     | '/buyer/negotiations'
+    | '/buyer/notifications'
+    | '/buyer/watchlist'
     | '/buyer/won'
     | '/auctions/'
     | '/admin/auctions/$id'
     | '/admin/auctions/new'
+    | '/admin/users/$id'
     | '/admin/vehicles/$id'
     | '/admin/vehicles/new'
     | '/buyer/won/$id'
@@ -420,6 +456,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuyerWonRouteImport
       parentRoute: typeof BuyerRoute
     }
+    '/buyer/watchlist': {
+      id: '/buyer/watchlist'
+      path: '/watchlist'
+      fullPath: '/buyer/watchlist'
+      preLoaderRoute: typeof BuyerWatchlistRouteImport
+      parentRoute: typeof BuyerRoute
+    }
+    '/buyer/notifications': {
+      id: '/buyer/notifications'
+      path: '/notifications'
+      fullPath: '/buyer/notifications'
+      preLoaderRoute: typeof BuyerNotificationsRouteImport
+      parentRoute: typeof BuyerRoute
+    }
     '/buyer/negotiations': {
       id: '/buyer/negotiations'
       path: '/negotiations'
@@ -504,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVehiclesIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/users/$id': {
+      id: '/admin/users/$id'
+      path: '/$id'
+      fullPath: '/admin/users/$id'
+      preLoaderRoute: typeof AdminUsersIdRouteImport
+      parentRoute: typeof AdminUsersRoute
+    }
     '/admin/auctions/new': {
       id: '/admin/auctions/new'
       path: '/auctions/new'
@@ -521,10 +578,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminUsersRouteChildren {
+  AdminUsersIdRoute: typeof AdminUsersIdRoute
+}
+
+const AdminUsersRouteChildren: AdminUsersRouteChildren = {
+  AdminUsersIdRoute: AdminUsersIdRoute,
+}
+
+const AdminUsersRouteWithChildren = AdminUsersRoute._addFileChildren(
+  AdminUsersRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminNegotiationsRoute: typeof AdminNegotiationsRoute
-  AdminUsersRoute: typeof AdminUsersRoute
+  AdminUsersRoute: typeof AdminUsersRouteWithChildren
   AdminAuctionsIdRoute: typeof AdminAuctionsIdRoute
   AdminAuctionsNewRoute: typeof AdminAuctionsNewRoute
   AdminVehiclesIdRoute: typeof AdminVehiclesIdRoute
@@ -536,7 +605,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminNegotiationsRoute: AdminNegotiationsRoute,
-  AdminUsersRoute: AdminUsersRoute,
+  AdminUsersRoute: AdminUsersRouteWithChildren,
   AdminAuctionsIdRoute: AdminAuctionsIdRoute,
   AdminAuctionsNewRoute: AdminAuctionsNewRoute,
   AdminVehiclesIdRoute: AdminVehiclesIdRoute,
@@ -563,6 +632,8 @@ interface BuyerRouteChildren {
   BuyerBidsRoute: typeof BuyerBidsRoute
   BuyerDashboardRoute: typeof BuyerDashboardRoute
   BuyerNegotiationsRoute: typeof BuyerNegotiationsRoute
+  BuyerNotificationsRoute: typeof BuyerNotificationsRoute
+  BuyerWatchlistRoute: typeof BuyerWatchlistRoute
   BuyerWonRoute: typeof BuyerWonRouteWithChildren
 }
 
@@ -570,6 +641,8 @@ const BuyerRouteChildren: BuyerRouteChildren = {
   BuyerBidsRoute: BuyerBidsRoute,
   BuyerDashboardRoute: BuyerDashboardRoute,
   BuyerNegotiationsRoute: BuyerNegotiationsRoute,
+  BuyerNotificationsRoute: BuyerNotificationsRoute,
+  BuyerWatchlistRoute: BuyerWatchlistRoute,
   BuyerWonRoute: BuyerWonRouteWithChildren,
 }
 

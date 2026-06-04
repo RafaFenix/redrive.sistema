@@ -37,6 +37,18 @@ export function VehicleCard({ auction, vehicle }: Props) {
                   : "Ao vivo"}
             </span>
           </div>
+          <div className="absolute bottom-2 left-2 flex flex-wrap gap-1">
+            {v.hasCoc && (
+              <span className="rounded-sm bg-background/90 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-foreground backdrop-blur">
+                COC
+              </span>
+            )}
+            {typeof v.leadTimeDays === "number" && (
+              <span className="rounded-sm bg-background/90 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-foreground backdrop-blur">
+                {v.leadTimeDays > 0 ? `${v.leadTimeDays} dias` : "Disponível"}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3 p-4">

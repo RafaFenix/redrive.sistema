@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Gavel, Trophy, Handshake } from "lucide-react";
+import { Bell, Eye, Gavel, Handshake, LayoutDashboard, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SidebarUserCard } from "@/components/layout/SidebarUserCard";
@@ -8,6 +8,8 @@ const items = [
   { title: "Dashboard", url: "/buyer/dashboard", icon: LayoutDashboard },
   { title: "Os meus lances", url: "/buyer/bids", icon: Gavel },
   { title: "Leilões ganhos", url: "/buyer/won", icon: Trophy },
+  { title: "Watchlist", url: "/buyer/watchlist", icon: Eye },
+  { title: "Notificações", url: "/buyer/notifications", icon: Bell },
   { title: "Negociações", url: "/buyer/negotiations", icon: Handshake },
 ] as const;
 

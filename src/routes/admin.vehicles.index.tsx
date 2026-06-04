@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   formatNumber,
   listAdminVehicleAuctionLinks,
@@ -20,6 +20,35 @@ function AdminVehicles() {
     Map<string, { id: string; lotNumber: string; status: string }>
   >(new Map());
   const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [makeFilter, setMakeFilter] = useState("all");
+  const [modelFilter, setModelFilter] = useState("all");
+
+  const makes = useMemo(
+    () => Array.from(new Set(vehicles.map((vehicle) => vehicle.make))).sort(),
+    [vehicles],
+  );
+  const models = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          vehicles
+            .filter((vehicle) => makeFilter === "all" || vehicle.make === makeFilter)
+            .map((vehicle) => vehicle.model),
+        ),
+      ).sort(),
+    [vehicles, makeFilter],
+  );
+  const filteredVehicles = useMemo(
+    () =>
+      vehicles.filter((vehicle) => {
+        if (statusFilter !== "all" && vehicle.status !== statusFilter) return false;
+        if (makeFilter !== "all" && vehicle.make !== makeFilter) return false;
+        if (modelFilter !== "all" && vehicle.model !== modelFilter) return false;
+        return true;
+      }),
+    [vehicles, statusFilter, makeFilter, modelFilter],
+  );
 
   useEffect(() => {
     async function loadVehicles() {
@@ -47,7 +76,7 @@ function AdminVehicles() {
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Viaturas</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {vehicles.length} viaturas no inventário
+            {filteredVehicles.length} de {vehicles.length} viaturas no inventário
           </p>
         </div>
         <Link
@@ -57,6 +86,55 @@ function AdminVehicles() {
           <Plus className="size-3.5" />
           Nova viatura
         </Link>
+      </div>
+
+      <div className="mb-6 grid gap-3 border border-border bg-card p-4 md:grid-cols-4">
+        <Select
+          label="Estado"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: "all", label: "Todos" },
+            { value: "draft", label: "Rascunho" },
+            { value: "active", label: "Ativas" },
+            { value: "sold", label: "Vendidas" },
+            { value: "archived", label: "Arquivadas" },
+          ]}
+        />
+        <Select
+          label="Marca"
+          value={makeFilter}
+          onChange={(value) => {
+            setMakeFilter(value);
+            setModelFilter("all");
+          }}
+          options={[
+            { value: "all", label: "Todas" },
+            ...makes.map((make) => ({ value: make, label: make })),
+          ]}
+        />
+        <Select
+          label="Modelo"
+          value={modelFilter}
+          onChange={setModelFilter}
+          options={[
+            { value: "all", label: "Todos" },
+            ...models.map((model) => ({ value: model, label: model })),
+          ]}
+        />
+        <div className="flex items-end">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("all");
+              setMakeFilter("all");
+              setModelFilter("all");
+            }}
+            className="border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-muted"
+          >
+            Limpar filtros
+          </button>
+        </div>
       </div>
 
       <div className="border border-border bg-card">
@@ -80,7 +158,7 @@ function AdminVehicles() {
                 </td>
               </tr>
             )}
-            {vehicles.map((vehicle) => (
+            {filteredVehicles.map((vehicle) => (
               <tr
                 key={vehicle.id}
                 className="border-b border-border last:border-0 hover:bg-muted/30"
@@ -121,10 +199,10 @@ function AdminVehicles() {
                 </td>
               </tr>
             ))}
-            {!isLoading && vehicles.length === 0 && (
+            {!isLoading && filteredVehicles.length === 0 && (
               <tr>
                 <td colSpan={7} className="p-12 text-center text-muted-foreground">
-                  Ainda não existem viaturas.
+                  Sem viaturas para estes filtros.
                 </td>
               </tr>
             )}
@@ -132,6 +210,37 @@ function AdminVehicles() {
         </table>
       </div>
     </div>
+  );
+}
+
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

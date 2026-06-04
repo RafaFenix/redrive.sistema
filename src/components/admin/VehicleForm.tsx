@@ -25,6 +25,13 @@ export type VehicleFormPayload = {
   appraisal_path: string | null;
   service_history_path: string | null;
   coc_path: string | null;
+  photoFiles: File[];
+  documentFiles: {
+    damage: File | null;
+    appraisal: File | null;
+    service: File | null;
+    coc: File | null;
+  };
 };
 
 type Props = {
@@ -136,42 +143,67 @@ export function VehicleForm({ vehicle, submitLabel, onSubmit }: Props) {
       </Section>
 
       <Section title="Fotos">
-        <label className="block">
-          <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            URLs das fotos
-          </span>
-          <textarea
-            name="photos"
-            rows={4}
-            defaultValue={vehicle?.photos
-              .filter((photo) => photo !== "/placeholder.svg")
-              .join("\n")}
-            className="w-full border border-border bg-background p-3 text-sm focus:border-primary focus:outline-none"
-            placeholder="Uma URL por linha ou separadas por vírgula"
-          />
-        </label>
+        <div className="space-y-4">
+          <label className="block">
+            <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Upload de fotos
+            </span>
+            <input
+              name="photo_files"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="block w-full border border-dashed border-border bg-background p-4 text-xs text-muted-foreground file:mr-3 file:border-0 file:bg-foreground file:px-3 file:py-1.5 file:text-xs file:font-bold file:uppercase file:text-background"
+            />
+            <span className="mt-1 block text-xs text-muted-foreground">
+              JPEG, PNG ou WebP. As fotos enviadas são adicionadas às URLs abaixo.
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              URLs das fotos
+            </span>
+            <textarea
+              name="photos"
+              rows={4}
+              defaultValue={vehicle?.photos
+                .filter((photo) => photo !== "/placeholder.svg")
+                .join("\n")}
+              className="w-full border border-border bg-background p-3 text-sm focus:border-primary focus:outline-none"
+              placeholder="Uma URL por linha ou separadas por vírgula"
+            />
+          </label>
+        </div>
       </Section>
 
       <Section title="Documentos (caminhos no bucket vehicle-documents)">
         <p className="mb-3 text-xs text-muted-foreground">
-          Faça upload dos PDFs para o bucket privado <code>vehicle-documents</code> e cole o caminho
-          relativo. Apenas compradores aprovados conseguem aceder.
+          Envie PDFs para o bucket privado <code>vehicle-documents</code> ou cole um caminho
+          relativo já existente. Apenas compradores aprovados conseguem aceder.
         </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field
+        <div className="grid gap-5 md:grid-cols-2">
+          <DocumentField
             label="Relatório de danos"
-            name="damage_report_path"
+            pathName="damage_report_path"
+            fileName="damage_report_file"
             defaultValue={vehicle?.damageReportPath}
           />
-          <Field label="Avaliação" name="appraisal_path" defaultValue={vehicle?.appraisalPath} />
-          <Field
+          <DocumentField
+            label="Avaliação"
+            pathName="appraisal_path"
+            fileName="appraisal_file"
+            defaultValue={vehicle?.appraisalPath}
+          />
+          <DocumentField
             label="Histórico de manutenção"
-            name="service_history_path"
+            pathName="service_history_path"
+            fileName="service_history_file"
             defaultValue={vehicle?.serviceHistoryPath}
           />
-          <Field
+          <DocumentField
             label="COC (certificado conformidade)"
-            name="coc_path"
+            pathName="coc_path"
+            fileName="coc_file"
             defaultValue={vehicle?.cocPath}
           />
         </div>
@@ -212,6 +244,15 @@ function buildVehiclePayload(formData: FormData): VehicleFormPayload {
     appraisal_path: optionalText(formData.get("appraisal_path")),
     service_history_path: optionalText(formData.get("service_history_path")),
     coc_path: optionalText(formData.get("coc_path")),
+    photoFiles: formData
+      .getAll("photo_files")
+      .filter((file): file is File => file instanceof File && file.size > 0),
+    documentFiles: {
+      damage: readFile(formData.get("damage_report_file")),
+      appraisal: readFile(formData.get("appraisal_file")),
+      service: readFile(formData.get("service_history_file")),
+      coc: readFile(formData.get("coc_file")),
+    },
   };
 }
 
@@ -227,6 +268,10 @@ function centsToEuros(value?: number | null) {
 
 function cleanPlaceholder(value?: string | null) {
   return value && value !== "—" ? value : undefined;
+}
+
+function readFile(value: FormDataEntryValue | null) {
+  return value instanceof File && value.size > 0 ? value : null;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -266,5 +311,34 @@ function Field({
         className="w-full border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
       />
     </label>
+  );
+}
+
+function DocumentField({
+  label,
+  pathName,
+  fileName,
+  defaultValue,
+}: {
+  label: string;
+  pathName: string;
+  fileName: string;
+  defaultValue?: string | null;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="block">
+        <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          {label} · upload
+        </span>
+        <input
+          name={fileName}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          className="block w-full border border-dashed border-border bg-background p-3 text-xs text-muted-foreground file:mr-3 file:border-0 file:bg-foreground file:px-3 file:py-1.5 file:text-xs file:font-bold file:uppercase file:text-background"
+        />
+      </label>
+      <Field label={`${label} · caminho`} name={pathName} defaultValue={defaultValue} />
+    </div>
   );
 }

@@ -1,5 +1,11 @@
 import { VehicleForm, type VehicleFormPayload } from "@/components/admin/VehicleForm";
-import { getAdminVehicle, getAdminVehicleAuctionLink, type Vehicle } from "@/lib/market-data";
+import {
+  getAdminVehicle,
+  getAdminVehicleAuctionLink,
+  type Vehicle,
+  uploadVehicleDocument,
+  uploadVehiclePhoto,
+} from "@/lib/market-data";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
@@ -59,10 +65,20 @@ function EditVehicle() {
     if (!vehicle) return;
 
     try {
+      const { photoFiles, documentFiles, ...vehiclePayload } = payload;
+      const uploadedPhotos = await Promise.all(
+        photoFiles.map((file) => uploadVehiclePhoto(vehicle.id, file)),
+      );
+      const uploadedDocuments = await uploadDocuments(vehicle.id, documentFiles);
       const supabase = getSupabaseClient();
       const { error } = await supabase
         .from("vehicles")
-        .update({ ...payload, updated_at: new Date().toISOString() })
+        .update({
+          ...vehiclePayload,
+          photos: [...vehiclePayload.photos, ...uploadedPhotos],
+          ...uploadedDocuments,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", vehicle.id);
 
       if (error) throw error;
@@ -153,5 +169,34 @@ function EditVehicle() {
 
       <VehicleForm vehicle={vehicle} submitLabel="Guardar alterações" onSubmit={submit} />
     </div>
+  );
+}
+
+async function uploadDocuments(vehicleId: string, files: VehicleFormPayload["documentFiles"]) {
+  const entries = await Promise.all([
+    files.damage
+      ? uploadVehicleDocument(vehicleId, "damage", files.damage).then(
+          (path) => ["damage_report_path", path] as const,
+        )
+      : null,
+    files.appraisal
+      ? uploadVehicleDocument(vehicleId, "appraisal", files.appraisal).then(
+          (path) => ["appraisal_path", path] as const,
+        )
+      : null,
+    files.service
+      ? uploadVehicleDocument(vehicleId, "service", files.service).then(
+          (path) => ["service_history_path", path] as const,
+        )
+      : null,
+    files.coc
+      ? uploadVehicleDocument(vehicleId, "coc", files.coc).then(
+          (path) => ["coc_path", path] as const,
+        )
+      : null,
+  ]);
+
+  return Object.fromEntries(
+    entries.filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)),
   );
 }

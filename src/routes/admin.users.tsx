@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { getTradeRegistrySignedUrl } from "@/lib/market-data";
 
 type UserStatus = "pending" | "approved" | "rejected" | "suspended";
 type AppRole = "admin" | "buyer";
@@ -146,6 +147,18 @@ function AdminUsers() {
     }
   }
 
+  async function openTradeRegistry(path: string | null) {
+    if (!path) return;
+
+    try {
+      const url = await getTradeRegistrySignedUrl(path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível abrir a certidão comercial.");
+    }
+  }
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-extrabold tracking-tight">Utilizadores</h1>
@@ -203,7 +216,15 @@ function AdminUsers() {
                   key={profile.id}
                   className="border-b border-border last:border-0 hover:bg-muted/30"
                 >
-                  <td className="px-4 py-3 font-medium">{profile.company_name || "—"}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      to="/admin/users/$id"
+                      params={{ id: profile.id }}
+                      className="underline-offset-4 hover:underline"
+                    >
+                      {profile.company_name || "—"}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs">{profile.vat_number || "—"}</td>
                   <td className="px-4 py-3 text-sm">
                     {profile.contact_name || "—"}
@@ -217,7 +238,17 @@ function AdminUsers() {
                     {new Date(profile.created_at).toLocaleDateString("pt-PT")}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">
-                    {profile.trade_registry_path ? "Sim" : "—"}
+                    {profile.trade_registry_path ? (
+                      <button
+                        type="button"
+                        onClick={() => void openTradeRegistry(profile.trade_registry_path)}
+                        className="font-bold text-primary underline-offset-4 hover:underline"
+                      >
+                        Abrir
+                      </button>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {tab === "pending" && (

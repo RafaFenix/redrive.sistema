@@ -1,11 +1,16 @@
 import { createFileRoute, notFound, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   cancelAuction,
   euroToCents,
   formatEUR,
   getAdminAuction,
+  listAuctionWatchers,
   openAuctionNegotiation,
+  parseBidIncrements,
+  type AuctionWatcher,
 } from "@/lib/market-data";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { BidHistory } from "@/components/auction/BidHistory";
 import { AuctionTimer } from "@/components/auction/AuctionTimer";
 import { ReserveIndicator } from "@/components/auction/ReserveIndicator";
@@ -26,6 +31,17 @@ export const Route = createFileRoute("/admin/auctions/$id")({
 function AdminAuctionDetail() {
   const router = useRouter();
   const { auction, vehicle, bids: bidList } = Route.useLoaderData();
+  const [isEditing, setIsEditing] = useState(false);
+  const [watchers, setWatchers] = useState<AuctionWatcher[]>([]);
+
+  useEffect(() => {
+    listAuctionWatchers(auction.id)
+      .then(setWatchers)
+      .catch((error) => {
+        console.error(error);
+        setWatchers([]);
+      });
+  }, [auction.id]);
 
   async function handleCancelAuction() {
     if (!window.confirm("Cancelar este leilão? Esta ação remove-o do catálogo público.")) return;
@@ -72,6 +88,55 @@ function AdminAuctionDetail() {
     }
   }
 
+  async function handleUpdateAuction(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (auction.status !== "scheduled") {
+      toast.error("Só é possível editar leilões agendados.");
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const startingPrice = euroToCents(formData.get("starting_price"));
+    const reservePrice = euroToCents(formData.get("reserve_price"));
+    const startsAt = String(formData.get("starts_at") ?? "");
+    const endsAt = String(formData.get("ends_at") ?? "");
+
+    if (!startingPrice || !reservePrice || !startsAt || !endsAt) {
+      toast.error("Preencha os campos obrigatórios.");
+      return;
+    }
+
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase
+        .from("auctions")
+        .update({
+          lot_number: String(formData.get("lot_number") ?? "").trim() || auction.lotNumber,
+          status: String(formData.get("status") ?? "scheduled"),
+          mode: String(formData.get("mode") ?? "standard"),
+          starting_price: startingPrice,
+          reserve_price: reservePrice,
+          buy_now_price: euroToCents(formData.get("buy_now_price")),
+          current_price: startingPrice,
+          bid_increments: parseBidIncrements(formData.get("bid_increments")),
+          starts_at: new Date(startsAt).toISOString(),
+          ends_at: new Date(endsAt).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", auction.id);
+
+      if (error) throw error;
+
+      toast.success("Leilão atualizado.");
+      setIsEditing(false);
+      await router.invalidate();
+    } catch (error) {
+      console.error(error);
+      toast.error("Não foi possível atualizar o leilão.");
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="mb-6 flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -92,7 +157,11 @@ function AdminAuctionDetail() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="border border-border px-3 py-2 text-xs font-bold uppercase hover:bg-muted">
+          <button
+            onClick={() => setIsEditing((current) => !current)}
+            disabled={auction.status !== "scheduled"}
+            className="border border-border px-3 py-2 text-xs font-bold uppercase hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+          >
             Editar
           </button>
           <button
@@ -104,6 +173,102 @@ function AdminAuctionDetail() {
           </button>
         </div>
       </div>
+
+      {isEditing && auction.status === "scheduled" && (
+        <form
+          onSubmit={(event) => void handleUpdateAuction(event)}
+          className="mb-6 max-w-3xl space-y-4 border border-border bg-card p-5"
+        >
+          <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Editar leilão agendado
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label="Lote" name="lot_number" defaultValue={auction.lotNumber} />
+            <Field
+              label="Preço inicial (€)"
+              name="starting_price"
+              type="number"
+              defaultValue={String(auction.startingPrice / 100)}
+              required
+            />
+            <Field
+              label="Preço de reserva (€)"
+              name="reserve_price"
+              type="number"
+              defaultValue={String((auction.reservePrice ?? 0) / 100)}
+              required
+            />
+            <Field
+              label="Comprar Já (€)"
+              name="buy_now_price"
+              type="number"
+              defaultValue={auction.buyNowPrice ? String(auction.buyNowPrice / 100) : ""}
+            />
+            <Field
+              label="Início"
+              name="starts_at"
+              type="datetime-local"
+              defaultValue={toDateTimeLocal(auction.startsAt)}
+              required
+            />
+            <Field
+              label="Fim"
+              name="ends_at"
+              type="datetime-local"
+              defaultValue={toDateTimeLocal(auction.endsAt)}
+              required
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Estado
+              </span>
+              <select
+                name="status"
+                defaultValue={auction.status}
+                className="w-full border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+              >
+                <option value="scheduled">Agendado</option>
+                <option value="active">Ativo</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Modo
+              </span>
+              <select
+                name="mode"
+                defaultValue={auction.mode ?? "standard"}
+                className="w-full border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+              >
+                <option value="standard">Standard</option>
+                <option value="blind">Blind</option>
+              </select>
+            </label>
+          </div>
+          <Field
+            label="Incrementos (cêntimos, separados por vírgula)"
+            name="bid_increments"
+            defaultValue={auction.bidIncrements.join(", ")}
+          />
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="bg-primary px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-primary-foreground hover:bg-primary/90"
+            >
+              Guardar alterações
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="border border-border px-5 py-2.5 text-xs font-bold uppercase tracking-widest hover:bg-muted"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Live panel */}
@@ -192,10 +357,36 @@ function AdminAuctionDetail() {
             </dl>
           </div>
           <BidHistory bids={bidList} showIdentity />
+          <div className="border border-border bg-card p-4">
+            <h3 className="mb-3 font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              Watchlist ({watchers.length})
+            </h3>
+            {watchers.length ? (
+              <ul className="divide-y divide-border text-sm">
+                {watchers.map((watcher) => (
+                  <li key={watcher.id} className="py-2">
+                    <p className="font-medium">{watcher.companyName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {watcher.contactName || "Sem contacto"} ·{" "}
+                      {new Date(watcher.createdAt).toLocaleString("pt-PT")}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Sem buyers a observar este leilão.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function toDateTimeLocal(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
 function Metric({
@@ -225,5 +416,34 @@ function Row({ label, value }: { label: string; value: string }) {
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-mono font-medium">{value}</dd>
     </div>
+  );
+}
+
+function Field({
+  label,
+  name,
+  type = "text",
+  defaultValue,
+  required,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  defaultValue?: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
+      <input
+        name={name}
+        type={type}
+        defaultValue={defaultValue}
+        required={required}
+        className="w-full border border-border bg-background px-3 py-2.5 text-sm focus:border-primary focus:outline-none"
+      />
+    </label>
   );
 }
