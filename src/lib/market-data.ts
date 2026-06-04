@@ -579,7 +579,7 @@ export async function getPublicAuction(id: string) {
   return {
     auction,
     vehicle: mapVehicle(vehicleRow as VehicleRow),
-    bids: bidsError ? [] : ((bidRows ?? []) as BidRow[]).map(mapBid),
+    bids: bidsError ? [] : ((bidRows ?? []) as BidRow[]).map((row, index) => mapBid(row, index)),
   };
 }
 
