@@ -52,24 +52,24 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <PublicHeader />
 
-      <main className="mx-auto max-w-7xl px-6 py-16 space-y-20">
+      <main className="space-y-20">
         {/* Section 1: Hero + Search */}
-        <section className="pt-8">
+        <section>
           <HeroSection auctions={auctions} />
         </section>
 
         {/* Section 2: Benefits */}
-        <section>
+        <section className="mx-auto max-w-7xl px-6">
           <BenefitsSection />
         </section>
 
         {/* Section 3: Recently Added */}
-        <section>
+        <section className="mx-auto max-w-7xl px-6">
           <VehicleGridSection auctions={auctions} />
         </section>
 
         {/* Section 4: Why Choose */}
-        <section>
+        <section className="mx-auto max-w-7xl px-6">
           <WhyChooseSection />
         </section>
 
@@ -79,12 +79,12 @@ function Landing() {
         </section>
 
         {/* Section 6: Testimonials */}
-        <section>
+        <section className="mx-auto max-w-7xl px-6">
           <TestimonialCarousel />
         </section>
 
         {/* Section 7: Final CTA */}
-        <section>
+        <section className="mx-auto max-w-7xl px-6">
           <FinalCTA />
         </section>
       </main>

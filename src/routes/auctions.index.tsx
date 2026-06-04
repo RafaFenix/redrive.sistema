@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  Car,
+  ChevronDown,
+  Fuel,
+  Gauge,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { PublicHeader } from "@/components/layout/PublicHeader";
-import { VehicleCard } from "@/components/vehicle/VehicleCard";
+import { VehicleListItem } from "@/components/vehicle/VehicleListItem";
 import { Auction, listPublicAuctions } from "@/lib/market-data";
 
 export const Route = createFileRoute("/auctions/")({
@@ -19,6 +30,7 @@ export const Route = createFileRoute("/auctions/")({
 
 function AuctionsList() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [query, setQuery] = useState("");
   const [make, setMake] = useState("all");
   const [model, setModel] = useState("all");
   const [fuel, setFuel] = useState("all");
@@ -49,6 +61,7 @@ function AuctionsList() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    setQuery(params.get("q") || "");
     setStatus(params.get("status") || "active");
     setMake(params.get("make") || "all");
     setModel(params.get("model") || "all");
@@ -69,6 +82,7 @@ function AuctionsList() {
     if (!searchReady) return;
 
     const params = new URLSearchParams();
+    if (query) params.set("q", query);
     if (status !== "active") params.set("status", status);
     if (make !== "all") params.set("make", make);
     if (model !== "all") params.set("model", model);
@@ -83,8 +97,12 @@ function AuctionsList() {
     if (immediate) params.set("immediate", "1");
     if (sort !== "ending") params.set("sort", sort);
 
-    const query = params.toString();
-    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+    const nextQuery = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`,
+    );
   }, [
     fuel,
     hasCoc,
@@ -94,6 +112,7 @@ function AuctionsList() {
     model,
     priceMax,
     priceMin,
+    query,
     searchReady,
     sort,
     status,
@@ -136,6 +155,7 @@ function AuctionsList() {
   }, [auctions]);
 
   const filtered = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
     const yFrom = yearFrom ? Number.parseInt(yearFrom, 10) : null;
     const yTo = yearTo ? Number.parseInt(yearTo, 10) : null;
     const pMin = priceMin ? Number.parseInt(priceMin, 10) * 100 : null;
@@ -144,8 +164,26 @@ function AuctionsList() {
 
     const list = auctions.filter((auction) => {
       if (status !== "all" && auction.status !== status) return false;
+
       const vehicle = auction.vehicle;
       if (!vehicle) return false;
+
+      if (normalizedQuery) {
+        const haystack = [
+          auction.lotNumber,
+          vehicle.make,
+          vehicle.model,
+          vehicle.variant,
+          vehicle.year,
+          vehicle.fuelType,
+          vehicle.transmission,
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        if (!haystack.includes(normalizedQuery)) return false;
+      }
+
       if (make !== "all" && vehicle.make !== make) return false;
       if (model !== "all" && vehicle.model !== model) return false;
       if (fuel !== "all" && vehicle.fuelType !== fuel) return false;
@@ -157,6 +195,7 @@ function AuctionsList() {
       if (kMax && vehicle.mileage > kMax) return false;
       if (hasCoc && !vehicle.hasCoc) return false;
       if (immediate && (vehicle.leadTimeDays ?? 0) > 0) return false;
+
       return true;
     });
 
@@ -168,6 +207,7 @@ function AuctionsList() {
       sorted.sort((a, b) => (b.vehicle?.year ?? 0) - (a.vehicle?.year ?? 0));
     else if (sort === "km-asc")
       sorted.sort((a, b) => (a.vehicle?.mileage ?? 0) - (b.vehicle?.mileage ?? 0));
+
     return sorted;
   }, [
     auctions,
@@ -179,6 +219,7 @@ function AuctionsList() {
     model,
     priceMax,
     priceMin,
+    query,
     sort,
     status,
     transmission,
@@ -187,6 +228,7 @@ function AuctionsList() {
   ]);
 
   function clearFilters() {
+    setQuery("");
     setMake("all");
     setModel("all");
     setFuel("all");
@@ -203,132 +245,225 @@ function AuctionsList() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f2f4f7]">
       <PublicHeader />
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">
-              Catálogo
-            </span>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Leilões ativos</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {filtered.length} {filtered.length === 1 ? "lote disponível" : "lotes disponíveis"}
-            </p>
-          </div>
-        </div>
 
-        <div className="mb-8 grid gap-3 border border-border bg-card p-4 md:grid-cols-4">
-          <Select
-            label="Estado"
-            value={status}
-            onChange={setStatus}
-            options={[
-              { value: "all", label: "Todos" },
-              { value: "active", label: "Ao vivo" },
-              { value: "scheduled", label: "Em breve" },
-              { value: "ended", label: "Terminados" },
-            ]}
-          />
-          <Select
-            label="Marca"
-            value={make}
-            onChange={(value) => {
-              setMake(value);
-              setModel("all");
-            }}
-            options={[
-              { value: "all", label: "Todas" },
-              ...makes.map((m) => ({ value: m, label: m })),
-            ]}
-          />
-          <Select
-            label="Modelo"
-            value={model}
-            onChange={setModel}
-            options={[
-              { value: "all", label: "Todos" },
-              ...models.map((m) => ({ value: m, label: m })),
-            ]}
-          />
-          <Select
-            label="Combustível"
-            value={fuel}
-            onChange={setFuel}
-            options={[
-              { value: "all", label: "Todos" },
-              ...fuels.map((fuelType) => ({ value: fuelType, label: fuelType })),
-            ]}
-          />
-          <Select
-            label="Transmissão"
-            value={transmission}
-            onChange={setTransmission}
-            options={[
-              { value: "all", label: "Todas" },
-              ...transmissions.map((value) => ({ value, label: value })),
-            ]}
-          />
-          <Select
-            label="Ordenar por"
-            value={sort}
-            onChange={setSort}
-            options={[
-              { value: "ending", label: "A terminar" },
-              { value: "price-asc", label: "Preço (↑)" },
-              { value: "price-desc", label: "Preço (↓)" },
-              { value: "year-desc", label: "Ano (mais novo)" },
-              { value: "km-asc", label: "Quilometragem (↑)" },
-            ]}
-          />
-          <NumberField
-            label="Ano desde"
-            value={yearFrom}
-            onChange={setYearFrom}
-            placeholder="2015"
-          />
-          <NumberField label="Ano até" value={yearTo} onChange={setYearTo} placeholder="2024" />
-          <NumberField
-            label="Preço mínimo (€)"
-            value={priceMin}
-            onChange={setPriceMin}
-            placeholder="10000"
-          />
-          <NumberField
-            label="Preço máximo (€)"
-            value={priceMax}
-            onChange={setPriceMax}
-            placeholder="50000"
-          />
-          <NumberField label="Km máximo" value={kmMax} onChange={setKmMax} placeholder="150000" />
-          <ToggleField label="COC disponível" checked={hasCoc} onChange={setHasCoc} />
-          <ToggleField
-            label="Disponível imediatamente"
-            checked={immediate}
-            onChange={setImmediate}
-          />
-          <div className="flex items-end md:col-span-4">
-            <button
-              onClick={clearFilters}
-              className="border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-muted"
-            >
-              Limpar filtros
-            </button>
-          </div>
-        </div>
+      <main className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:grid-cols-[300px_1fr] lg:px-6">
+        <aside className="lg:sticky lg:top-20 lg:self-start">
+          <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+            <div className="border-b border-border p-4">
+              <h2 className="flex items-center gap-2 text-lg font-extrabold uppercase tracking-tight text-[#20242b]">
+                <Search className="size-5" />
+                Procurar
+              </h2>
+              <div className="mt-3 grid grid-cols-2 rounded-xl bg-muted p-1 text-sm font-bold">
+                <button type="button" className="rounded-lg bg-white py-2 text-[#20242b] shadow-sm">
+                  Leilões
+                </button>
+                <button type="button" className="py-2 text-muted-foreground">
+                  Carro
+                </button>
+              </div>
+              <label className="mt-3 flex items-center gap-2 rounded-full border border-border px-3 py-2">
+                <Search className="size-4 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Lote, marca, modelo, versão..."
+                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+                />
+              </label>
+            </div>
 
-        {filtered.length === 0 ? (
-          <div className="border border-dashed border-border bg-card p-12 text-center text-muted-foreground">
-            Sem resultados para estes filtros.
+            <div className="space-y-2 p-3">
+              <FilterGroup icon={Car} title="Estado">
+                <Select
+                  label="Estado"
+                  value={status}
+                  onChange={setStatus}
+                  options={[
+                    { value: "all", label: "Todos" },
+                    { value: "active", label: "Ao vivo" },
+                    { value: "scheduled", label: "Em breve" },
+                    { value: "ended", label: "Terminados" },
+                  ]}
+                />
+              </FilterGroup>
+
+              <FilterGroup icon={SlidersHorizontal} title="Marca e modelo">
+                <Select
+                  label="Marca"
+                  value={make}
+                  onChange={(value) => {
+                    setMake(value);
+                    setModel("all");
+                  }}
+                  options={[
+                    { value: "all", label: "Todas" },
+                    ...makes.map((m) => ({ value: m, label: m })),
+                  ]}
+                />
+                <Select
+                  label="Modelo"
+                  value={model}
+                  onChange={setModel}
+                  options={[
+                    { value: "all", label: "Todos" },
+                    ...models.map((m) => ({ value: m, label: m })),
+                  ]}
+                />
+              </FilterGroup>
+
+              <FilterGroup icon={Fuel} title="Combustível">
+                <Select
+                  label="Combustível"
+                  value={fuel}
+                  onChange={setFuel}
+                  options={[
+                    { value: "all", label: "Todos" },
+                    ...fuels.map((fuelType) => ({ value: fuelType, label: fuelType })),
+                  ]}
+                />
+              </FilterGroup>
+
+              <FilterGroup icon={CalendarDays} title="Primeiro registo">
+                <div className="grid grid-cols-2 gap-2">
+                  <NumberField
+                    label="Desde"
+                    value={yearFrom}
+                    onChange={setYearFrom}
+                    placeholder="2020"
+                  />
+                  <NumberField label="Até" value={yearTo} onChange={setYearTo} placeholder="2024" />
+                </div>
+              </FilterGroup>
+
+              <FilterGroup icon={Zap} title="Mudanças">
+                <Select
+                  label="Transmissão"
+                  value={transmission}
+                  onChange={setTransmission}
+                  options={[
+                    { value: "all", label: "Todas" },
+                    ...transmissions.map((value) => ({ value, label: value })),
+                  ]}
+                />
+              </FilterGroup>
+
+              <FilterGroup icon={Gauge} title="Quilometragem">
+                <NumberField
+                  label="Km máximo"
+                  value={kmMax}
+                  onChange={setKmMax}
+                  placeholder="150000"
+                />
+              </FilterGroup>
+
+              <FilterGroup icon={Sparkles} title="Preço">
+                <div className="grid grid-cols-2 gap-2">
+                  <NumberField
+                    label="Mínimo"
+                    value={priceMin}
+                    onChange={setPriceMin}
+                    placeholder="10000"
+                  />
+                  <NumberField
+                    label="Máximo"
+                    value={priceMax}
+                    onChange={setPriceMax}
+                    placeholder="50000"
+                  />
+                </div>
+              </FilterGroup>
+
+              <FilterGroup icon={Sparkles} title="Documentos e entrega">
+                <ToggleField label="COC disponível" checked={hasCoc} onChange={setHasCoc} />
+                <ToggleField
+                  label="Disponível imediatamente"
+                  checked={immediate}
+                  onChange={setImmediate}
+                />
+              </FilterGroup>
+            </div>
+
+            <div className="border-t border-border p-3">
+              <button
+                type="button"
+                className="w-full rounded-full bg-primary px-4 py-3 text-sm font-extrabold text-primary-foreground transition hover:bg-primary/90"
+              >
+                Mostrar {filtered.length} veículos
+              </button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-3 w-full text-sm font-semibold text-muted-foreground hover:text-foreground"
+              >
+                Reset filter
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((auction) => (
-              <VehicleCard key={auction.id} auction={auction} vehicle={auction.vehicle} />
-            ))}
+        </aside>
+
+        <section className="min-w-0">
+          <div className="mb-4 rounded-xl bg-[#f2f4f7] pb-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-extrabold uppercase tracking-tight text-[#20242b]">
+                  Resultados da pesquisa ({filtered.length} veículos)
+                </h1>
+                <div className="mt-2 h-0.5 w-full max-w-4xl bg-primary" />
+              </div>
+              <Select
+                label="Ordenar"
+                value={sort}
+                onChange={setSort}
+                options={[
+                  { value: "ending", label: "Tempo restante" },
+                  { value: "price-asc", label: "Preço (↑)" },
+                  { value: "price-desc", label: "Preço (↓)" },
+                  { value: "year-desc", label: "Ano (mais novo)" },
+                  { value: "km-asc", label: "Quilometragem (↑)" },
+                ]}
+              />
+            </div>
           </div>
-        )}
+
+          {filtered.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-white p-12 text-center text-muted-foreground">
+              Sem resultados para estes filtros.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((auction) => (
+                <VehicleListItem key={auction.id} auction={auction} vehicle={auction.vehicle} />
+              ))}
+            </div>
+          )}
+        </section>
       </main>
+    </div>
+  );
+}
+
+function FilterGroup({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg bg-muted/60">
+      <div className="flex items-center justify-between gap-2 px-3 py-3 font-bold text-[#20242b]">
+        <span className="flex items-center gap-2">
+          <Icon className="size-4 text-slate-400" />
+          {title}
+        </span>
+        <ChevronDown className="size-4 text-slate-500" />
+      </div>
+      <div className="space-y-2 border-t border-white/80 px-3 pb-3 pt-2">{children}</div>
     </div>
   );
 }
@@ -346,13 +481,11 @@ function Select({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </span>
+      <span className="sr-only">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+        className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -377,16 +510,14 @@ function NumberField({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </span>
+      <span className="sr-only">{label}</span>
       <input
         type="number"
         inputMode="numeric"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+        className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
       />
     </label>
   );
@@ -402,15 +533,13 @@ function ToggleField({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-2 border border-border bg-background px-3 py-2 text-sm">
+    <label className="flex items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm">
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
       />
-      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </span>
+      <span className="font-semibold text-muted-foreground">{label}</span>
     </label>
   );
 }

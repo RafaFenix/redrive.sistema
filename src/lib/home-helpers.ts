@@ -43,11 +43,17 @@ export const TESTIMONIALS: Testimonial[] = [
   },
 ];
 
-export function buildSearchUrl(make?: string, model?: string, maxPrice?: string): string {
+export function buildSearchUrl(
+  make?: string,
+  model?: string,
+  priceMax?: string,
+  yearFrom?: string,
+): string {
   const params = new URLSearchParams();
   if (make && make !== "all") params.set("make", make);
   if (model && model !== "all") params.set("model", model);
-  if (maxPrice) params.set("priceMax", maxPrice);
+  if (priceMax) params.set("priceMax", priceMax);
+  if (yearFrom) params.set("yearFrom", yearFrom);
   return `/auctions${params.size > 0 ? `?${params.toString()}` : ""}`;
 }
 
