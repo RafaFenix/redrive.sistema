@@ -433,7 +433,7 @@ export async function listAdminVehicles() {
   const { data, error } = await supabase
     .from("vehicles")
     .select(
-      "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+      "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
     )
     .order("created_at", { ascending: false });
 
@@ -454,7 +454,7 @@ export async function listAdminAuctions() {
       supabase
         .from("vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
         ),
     ]);
 
@@ -489,7 +489,7 @@ export async function getAdminAuction(id: string) {
       supabase
         .from("vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
         )
         .eq("id", auction.vehicleId)
         .maybeSingle(),
@@ -550,7 +550,7 @@ export async function listPublicAuctions() {
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         ),
     ]);
 
@@ -584,7 +584,7 @@ export async function getPublicAuction(id: string) {
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         )
         .eq("id", auction.vehicleId)
         .maybeSingle(),
@@ -656,7 +656,7 @@ export async function listBuyerBids(): Promise<BuyerBid[]> {
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         ),
     ]);
 
@@ -704,7 +704,7 @@ async function hydrateBuyerOrders(orderRows: OrderRow[]): Promise<BuyerOrder[]> 
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         )
         .in("id", vehicleIds),
     ]);
@@ -826,12 +826,12 @@ async function listNegotiations({ admin }: { admin: boolean }): Promise<Negotiat
       ? supabase
           .from("vehicles")
           .select(
-            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
           )
       : supabase
           .from("public_vehicles")
           .select(
-            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
           ),
     admin
       ? supabase.from("profiles").select("id,company_name,contact_name").in("id", buyerIds)
