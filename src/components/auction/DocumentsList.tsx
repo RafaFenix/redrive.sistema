@@ -1,14 +1,8 @@
 import { useEffect, useState } from "react";
 import { FileText, Lock, AlertCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import {
-  getCurrentAccess,
-  type CurrentAccess,
-} from "@/lib/auth-client";
-import {
-  getVehicleDocuments,
-  type VehicleDocumentLink,
-} from "@/lib/market-data";
+import { getCurrentAccess, type CurrentAccess } from "@/lib/auth-client";
+import { getVehicleDocuments, type VehicleDocumentLink } from "@/lib/market-data";
 
 interface Props {
   vehicleId: string;
@@ -65,8 +59,8 @@ export function DocumentsList({
 
   const canSee = Boolean(
     access?.isAuthenticated &&
-      access.profile?.status === "approved" &&
-      (access.roles.includes("buyer") || access.roles.includes("admin")),
+    access.profile?.status === "approved" &&
+    (access.roles.includes("buyer") || access.roles.includes("admin")),
   );
 
   useEffect(() => {

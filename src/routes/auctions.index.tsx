@@ -155,7 +155,12 @@ function AuctionsList() {
               { value: "km-asc", label: "Quilometragem (↑)" },
             ]}
           />
-          <NumberField label="Ano desde" value={yearFrom} onChange={setYearFrom} placeholder="2015" />
+          <NumberField
+            label="Ano desde"
+            value={yearFrom}
+            onChange={setYearFrom}
+            placeholder="2015"
+          />
           <NumberField label="Ano até" value={yearTo} onChange={setYearTo} placeholder="2024" />
           <NumberField
             label="Preço máximo (€)"

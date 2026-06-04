@@ -1076,14 +1076,12 @@ export async function getVehicleDocuments(vehicleId: string): Promise<VehicleDoc
     target_vehicle_id: vehicleId,
   });
   if (error) throw error;
-  const row = (Array.isArray(data) ? data[0] : data) as
-    | {
-        damage_report_path: string | null;
-        appraisal_path: string | null;
-        service_history_path: string | null;
-        coc_path: string | null;
-      }
-    | null;
+  const row = (Array.isArray(data) ? data[0] : data) as {
+    damage_report_path: string | null;
+    appraisal_path: string | null;
+    service_history_path: string | null;
+    coc_path: string | null;
+  } | null;
   if (!row) return [];
 
   const entries: { kind: VehicleDocumentKind; path: string }[] = [];
