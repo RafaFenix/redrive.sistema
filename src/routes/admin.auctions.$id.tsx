@@ -140,7 +140,7 @@ function AdminAuctionDetail() {
                 </tr>
               </thead>
               <tbody>
-                {bidList.map((b) => (
+                {bidList.map((b: (typeof bidList)[number]) => (
                   <tr key={b.id} className="border-b border-border last:border-0">
                     <td className="py-2 font-mono text-xs text-muted-foreground">
                       {new Date(b.createdAt).toLocaleTimeString("pt-PT")}
