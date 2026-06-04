@@ -37,12 +37,16 @@ function AuctionsList() {
   }, []);
 
   const makes = useMemo(() => {
-    const vehicleMakes = new Set(auctions.map((auction) => auction.vehicle?.make).filter(Boolean));
+    const vehicleMakes = new Set(
+      auctions.map((auction) => auction.vehicle?.make).filter((v): v is string => Boolean(v)),
+    );
     return Array.from(vehicleMakes).sort();
   }, [auctions]);
 
   const fuels = useMemo(() => {
-    const fuelTypes = new Set(auctions.map((auction) => auction.vehicle?.fuelType).filter(Boolean));
+    const fuelTypes = new Set(
+      auctions.map((auction) => auction.vehicle?.fuelType).filter((v): v is string => Boolean(v)),
+    );
     return Array.from(fuelTypes).sort();
   }, [auctions]);
 

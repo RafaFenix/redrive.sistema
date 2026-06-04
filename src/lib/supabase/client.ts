@@ -26,11 +26,6 @@ export function getSupabaseClient() {
     FALLBACK_SUPABASE_PUBLISHABLE_KEY,
   );
 
-  if (!supabaseUrl || !publishableKey) {
-    throw new Error(
-      "Configuração Supabase em falta. Define VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY.",
-    );
-  }
 
   supabaseClient = createClient(supabaseUrl, publishableKey, {
     auth: {
