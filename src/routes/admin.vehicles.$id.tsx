@@ -1,34 +1,63 @@
 import { VehicleForm, type VehicleFormPayload } from "@/components/admin/VehicleForm";
 import { getAdminVehicle, getAdminVehicleAuctionLink, type Vehicle } from "@/lib/market-data";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/vehicles/$id")({
   head: () => ({ meta: [{ title: "Editar viatura — Admin" }] }),
-  loader: async ({ params }) => {
-    const vehicle = await getAdminVehicle(params.id);
-    if (!vehicle) throw notFound();
-    const auction = await getAdminVehicleAuctionLink(params.id);
-    return { vehicle, auction };
-  },
   component: EditVehicle,
 });
 
 function EditVehicle() {
-  const initialData = Route.useLoaderData();
+  const { id } = Route.useParams();
   const navigate = useNavigate();
-  const [vehicle, setVehicle] = useState<Vehicle>(initialData.vehicle);
-  const [auction, setAuction] = useState(initialData.auction);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [auction, setAuction] =
+    useState<Awaited<ReturnType<typeof getAdminVehicleAuctionLink>>>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setVehicle(initialData.vehicle);
-    setAuction(initialData.auction);
-  }, [initialData]);
+    let isMounted = true;
+
+    async function loadVehicle() {
+      try {
+        const [vehicleData, auctionData] = await Promise.all([
+          getAdminVehicle(id),
+          getAdminVehicleAuctionLink(id),
+        ]);
+
+        if (!isMounted) return;
+
+        if (!vehicleData) {
+          toast.error("Viatura não encontrada.");
+          await navigate({ to: "/admin/vehicles" });
+          return;
+        }
+
+        setVehicle(vehicleData);
+        setAuction(auctionData);
+      } catch (error) {
+        console.error(error);
+        if (!isMounted) return;
+        toast.error("Não foi possível carregar a viatura.");
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    void loadVehicle();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, navigate]);
 
   async function submit(payload: VehicleFormPayload) {
+    if (!vehicle) return;
+
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase
@@ -44,6 +73,24 @@ function EditVehicle() {
       console.error(error);
       toast.error("Não foi possível atualizar a viatura.");
     }
+  }
+
+  if (isLoading) {
+    return <div className="p-8 text-sm text-muted-foreground">A carregar dados da viatura...</div>;
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-extrabold tracking-tight">Viatura não encontrada</h1>
+        <Link
+          to="/admin/vehicles"
+          className="mt-4 inline-block text-sm font-semibold underline-offset-4 hover:underline"
+        >
+          Voltar às viaturas
+        </Link>
+      </div>
+    );
   }
 
   return (
