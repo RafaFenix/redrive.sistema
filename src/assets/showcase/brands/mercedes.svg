@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Mercedes-Benz">
+  <defs>
+    <radialGradient id="mb-metal" cx=".35" cy=".25" r=".8">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".45" stop-color="#d1d5db"/>
+      <stop offset="1" stop-color="#374151"/>
+    </radialGradient>
+  </defs>
+  <circle cx="80" cy="80" r="64" fill="none" stroke="url(#mb-metal)" stroke-width="8"/>
+  <path d="M80 25 91 80 80 92 69 80Z" fill="url(#mb-metal)"/>
+  <path d="M80 88 132 111 119 125 78 98Z" fill="url(#mb-metal)"/>
+  <path d="M80 88 28 111 41 125 82 98Z" fill="url(#mb-metal)"/>
+</svg>

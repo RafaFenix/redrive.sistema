@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="BMW">
+  <circle cx="80" cy="80" r="74" fill="#111827"/>
+  <circle cx="80" cy="80" r="52" fill="#f8fafc"/>
+  <path d="M80 28a52 52 0 0 1 52 52H80Z" fill="#38bdf8"/>
+  <path d="M28 80a52 52 0 0 1 52-52v52Z" fill="#f8fafc"/>
+  <path d="M80 80h52a52 52 0 0 1-52 52Z" fill="#f8fafc"/>
+  <path d="M28 80h52v52a52 52 0 0 1-52-52Z" fill="#38bdf8"/>
+  <circle cx="80" cy="80" r="53" fill="none" stroke="#111827" stroke-width="5"/>
+  <text x="80" y="27" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="800" fill="#f8fafc" letter-spacing="7">BMW</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" role="img" aria-label="França">
+  <clipPath id="fr-shape"><path d="M59 8 97 13l29 23-4 33 16 21-34 11-26 8-28-17-25-7 7-35-10-24Z"/></clipPath>
+  <g clip-path="url(#fr-shape)">
+    <rect width="54" height="120" x="0" fill="#1d4ed8"/>
+    <rect width="54" height="120" x="54" fill="#f8fafc"/>
+    <rect width="54" height="120" x="108" fill="#ef4444"/>
+  </g>
+</svg>

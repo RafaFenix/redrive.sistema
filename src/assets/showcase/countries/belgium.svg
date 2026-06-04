@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" role="img" aria-label="Bélgica">
+  <clipPath id="be-shape"><path d="M50 9 86 15l25 18 5 26 22 12-16 21-31 6-26 13-22-17-25-6 8-30-10-22 22-11Z"/></clipPath>
+  <g clip-path="url(#be-shape)">
+    <rect width="54" height="120" x="0" fill="#111827"/>
+    <rect width="54" height="120" x="54" fill="#facc15"/>
+    <rect width="54" height="120" x="108" fill="#ef4444"/>
+  </g>
+</svg>

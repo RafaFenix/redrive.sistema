@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 120" role="img" aria-label="Audi">
+  <defs>
+    <linearGradient id="audi-metal" x1="0" x2="1">
+      <stop offset="0" stop-color="#6b7280"/>
+      <stop offset=".5" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#4b5563"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#audi-metal)" stroke-width="10">
+    <circle cx="55" cy="60" r="32"/>
+    <circle cx="92" cy="60" r="32"/>
+    <circle cx="129" cy="60" r="32"/>
+    <circle cx="166" cy="60" r="32"/>
+  </g>
+</svg>

@@ -8,8 +8,7 @@ import {
   BenefitsSection,
   VehicleGridSection,
   WhyChooseSection,
-  BrandCarousel,
-  CountryCarousel,
+  BrandCountryShowcase,
   TestimonialCarousel,
   FinalCTA,
 } from "@/components/home";
@@ -74,22 +73,17 @@ function Landing() {
           <WhyChooseSection />
         </section>
 
-        {/* Section 5: Brand Carousel */}
+        {/* Section 5: Brand + Country Showcase */}
         <section>
-          <BrandCarousel auctions={auctions} />
+          <BrandCountryShowcase />
         </section>
 
-        {/* Section 6: Country Carousel */}
-        <section>
-          <CountryCarousel />
-        </section>
-
-        {/* Section 7: Testimonials */}
+        {/* Section 6: Testimonials */}
         <section>
           <TestimonialCarousel />
         </section>
 
-        {/* Section 8: Final CTA */}
+        {/* Section 7: Final CTA */}
         <section>
           <FinalCTA />
         </section>
