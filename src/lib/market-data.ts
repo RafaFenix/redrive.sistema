@@ -41,6 +41,7 @@ export interface Vehicle {
   color: string;
   fuelType: string;
   transmission: string;
+  powerCv?: number | null;
   power: string;
   doors: number;
   condition: string;
@@ -298,6 +299,7 @@ export function mapVehicle(row: VehicleRow): Vehicle {
     color: row.color ?? "—",
     fuelType: row.fuel_type ?? "—",
     transmission: row.transmission ?? "—",
+    powerCv: row.power_cv,
     power: row.power_cv ? `${row.power_cv} cv` : "—",
     doors: row.doors ?? 0,
     condition: row.condition ?? "—",
@@ -439,6 +441,61 @@ export async function listAdminVehicles() {
 
   if (error) throw error;
   return ((data ?? []) as VehicleRow[]).map(mapVehicle);
+}
+
+export async function getAdminVehicle(id: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("vehicles")
+    .select(
+      "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapVehicle(data as VehicleRow) : null;
+}
+
+export async function listAdminVehicleAuctionLinks() {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("auctions")
+    .select("id,lot_number,vehicle_id,status")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return new Map(
+    (data ?? []).map((auction) => [
+      auction.vehicle_id as string,
+      {
+        id: auction.id as string,
+        lotNumber: auction.lot_number as string,
+        status: auction.status as AuctionStatus,
+      },
+    ]),
+  );
+}
+
+export async function getAdminVehicleAuctionLink(vehicleId: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("auctions")
+    .select("id,lot_number,vehicle_id,status")
+    .eq("vehicle_id", vehicleId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return {
+    id: data.id as string,
+    lotNumber: data.lot_number as string,
+    status: data.status as AuctionStatus,
+  };
 }
 
 export async function listAdminAuctions() {

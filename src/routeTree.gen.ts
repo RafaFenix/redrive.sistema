@@ -31,6 +31,7 @@ import { Route as AdminVehiclesIndexRouteImport } from './routes/admin.vehicles.
 import { Route as AdminAuctionsIndexRouteImport } from './routes/admin.auctions.index'
 import { Route as BuyerWonIdRouteImport } from './routes/buyer.won.$id'
 import { Route as AdminVehiclesNewRouteImport } from './routes/admin.vehicles.new'
+import { Route as AdminVehiclesIdRouteImport } from './routes/admin.vehicles.$id'
 import { Route as AdminAuctionsNewRouteImport } from './routes/admin.auctions.new'
 import { Route as AdminAuctionsIdRouteImport } from './routes/admin.auctions.$id'
 
@@ -144,6 +145,11 @@ const AdminVehiclesNewRoute = AdminVehiclesNewRouteImport.update({
   path: '/vehicles/new',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVehiclesIdRoute = AdminVehiclesIdRouteImport.update({
+  id: '/vehicles/$id',
+  path: '/vehicles/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAuctionsNewRoute = AdminAuctionsNewRouteImport.update({
   id: '/auctions/new',
   path: '/auctions/new',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/auctions/': typeof AuctionsIndexRoute
   '/admin/auctions/$id': typeof AdminAuctionsIdRoute
   '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/vehicles/$id': typeof AdminVehiclesIdRoute
   '/admin/vehicles/new': typeof AdminVehiclesNewRoute
   '/buyer/won/$id': typeof BuyerWonIdRoute
   '/admin/auctions/': typeof AdminAuctionsIndexRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/auctions': typeof AuctionsIndexRoute
   '/admin/auctions/$id': typeof AdminAuctionsIdRoute
   '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/vehicles/$id': typeof AdminVehiclesIdRoute
   '/admin/vehicles/new': typeof AdminVehiclesNewRoute
   '/buyer/won/$id': typeof BuyerWonIdRoute
   '/admin/auctions': typeof AdminAuctionsIndexRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/auctions/': typeof AuctionsIndexRoute
   '/admin/auctions/$id': typeof AdminAuctionsIdRoute
   '/admin/auctions/new': typeof AdminAuctionsNewRoute
+  '/admin/vehicles/$id': typeof AdminVehiclesIdRoute
   '/admin/vehicles/new': typeof AdminVehiclesNewRoute
   '/buyer/won/$id': typeof BuyerWonIdRoute
   '/admin/auctions/': typeof AdminAuctionsIndexRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/auctions/'
     | '/admin/auctions/$id'
     | '/admin/auctions/new'
+    | '/admin/vehicles/$id'
     | '/admin/vehicles/new'
     | '/buyer/won/$id'
     | '/admin/auctions/'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
     | '/auctions'
     | '/admin/auctions/$id'
     | '/admin/auctions/new'
+    | '/admin/vehicles/$id'
     | '/admin/vehicles/new'
     | '/buyer/won/$id'
     | '/admin/auctions'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/auctions/'
     | '/admin/auctions/$id'
     | '/admin/auctions/new'
+    | '/admin/vehicles/$id'
     | '/admin/vehicles/new'
     | '/buyer/won/$id'
     | '/admin/auctions/'
@@ -485,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVehiclesNewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/vehicles/$id': {
+      id: '/admin/vehicles/$id'
+      path: '/vehicles/$id'
+      fullPath: '/admin/vehicles/$id'
+      preLoaderRoute: typeof AdminVehiclesIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/auctions/new': {
       id: '/admin/auctions/new'
       path: '/auctions/new'
@@ -508,6 +527,7 @@ interface AdminRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminAuctionsIdRoute: typeof AdminAuctionsIdRoute
   AdminAuctionsNewRoute: typeof AdminAuctionsNewRoute
+  AdminVehiclesIdRoute: typeof AdminVehiclesIdRoute
   AdminVehiclesNewRoute: typeof AdminVehiclesNewRoute
   AdminAuctionsIndexRoute: typeof AdminAuctionsIndexRoute
   AdminVehiclesIndexRoute: typeof AdminVehiclesIndexRoute
@@ -519,6 +539,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminAuctionsIdRoute: AdminAuctionsIdRoute,
   AdminAuctionsNewRoute: AdminAuctionsNewRoute,
+  AdminVehiclesIdRoute: AdminVehiclesIdRoute,
   AdminVehiclesNewRoute: AdminVehiclesNewRoute,
   AdminAuctionsIndexRoute: AdminAuctionsIndexRoute,
   AdminVehiclesIndexRoute: AdminVehiclesIndexRoute,
