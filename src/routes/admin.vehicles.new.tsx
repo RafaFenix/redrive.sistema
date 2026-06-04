@@ -36,6 +36,10 @@ function NewVehicle() {
         legalization_cost: euroToCents(formData.get("legalization_cost")) ?? 0,
         market_price_ref: euroToCents(formData.get("market_price_ref")),
         lead_time_days: parseInteger(formData.get("lead_time_days")),
+        damage_report_path: String(formData.get("damage_report_path") ?? "").trim() || null,
+        appraisal_path: String(formData.get("appraisal_path") ?? "").trim() || null,
+        service_history_path: String(formData.get("service_history_path") ?? "").trim() || null,
+        coc_path: String(formData.get("coc_path") ?? "").trim() || null,
       });
 
       if (error) throw error;
@@ -112,6 +116,19 @@ function NewVehicle() {
               placeholder="Uma URL por linha ou separadas por vírgula"
             />
           </label>
+        </Section>
+
+        <Section title="Documentos (caminhos no bucket vehicle-documents)">
+          <p className="mb-3 text-xs text-muted-foreground">
+            Faça upload dos PDFs para o bucket privado <code>vehicle-documents</code> e cole o
+            caminho relativo. Apenas compradores aprovados conseguem aceder.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Relatório de danos" name="damage_report_path" />
+            <Field label="Avaliação" name="appraisal_path" />
+            <Field label="Histórico de manutenção" name="service_history_path" />
+            <Field label="COC (certificado conformidade)" name="coc_path" />
+          </div>
         </Section>
 
         <button

@@ -53,6 +53,14 @@ export interface Vehicle {
   legalizationCost: number;
   marketPriceRef?: number | null;
   leadTimeDays?: number | null;
+  hasDamageReport: boolean;
+  hasAppraisal: boolean;
+  hasServiceHistory: boolean;
+  hasCoc: boolean;
+  damageReportPath?: string | null;
+  appraisalPath?: string | null;
+  serviceHistoryPath?: string | null;
+  cocPath?: string | null;
 }
 
 export interface Auction {
@@ -164,7 +172,13 @@ type VehicleRow = {
   origin_plate?: string | null;
   photos: string[] | null;
   damage_report_path?: string | null;
+  appraisal_path?: string | null;
+  service_history_path?: string | null;
+  coc_path?: string | null;
   has_damage_report?: boolean | null;
+  has_appraisal?: boolean | null;
+  has_service_history?: boolean | null;
+  has_coc?: boolean | null;
   additional_services: { name: string; price: number }[] | null;
   legalization_cost: number;
   market_price_ref?: number | null;
@@ -296,6 +310,14 @@ export function mapVehicle(row: VehicleRow): Vehicle {
     legalizationCost: row.legalization_cost,
     marketPriceRef: row.market_price_ref,
     leadTimeDays: row.lead_time_days,
+    hasDamageReport: row.has_damage_report ?? Boolean(row.damage_report_path),
+    hasAppraisal: row.has_appraisal ?? Boolean(row.appraisal_path),
+    hasServiceHistory: row.has_service_history ?? Boolean(row.service_history_path),
+    hasCoc: row.has_coc ?? Boolean(row.coc_path),
+    damageReportPath: row.damage_report_path,
+    appraisalPath: row.appraisal_path,
+    serviceHistoryPath: row.service_history_path,
+    cocPath: row.coc_path,
   };
 }
 
@@ -411,7 +433,7 @@ export async function listAdminVehicles() {
   const { data, error } = await supabase
     .from("vehicles")
     .select(
-      "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+      "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
     )
     .order("created_at", { ascending: false });
 
@@ -432,7 +454,7 @@ export async function listAdminAuctions() {
       supabase
         .from("vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
         ),
     ]);
 
@@ -467,7 +489,7 @@ export async function getAdminAuction(id: string) {
       supabase
         .from("vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
         )
         .eq("id", auction.vehicleId)
         .maybeSingle(),
@@ -528,7 +550,7 @@ export async function listPublicAuctions() {
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         ),
     ]);
 
@@ -562,7 +584,7 @@ export async function getPublicAuction(id: string) {
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         )
         .eq("id", auction.vehicleId)
         .maybeSingle(),
@@ -634,7 +656,7 @@ export async function listBuyerBids(): Promise<BuyerBid[]> {
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         ),
     ]);
 
@@ -682,7 +704,7 @@ async function hydrateBuyerOrders(orderRows: OrderRow[]): Promise<BuyerOrder[]> 
       supabase
         .from("public_vehicles")
         .select(
-          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+          "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
         )
         .in("id", vehicleIds),
     ]);
@@ -804,12 +826,12 @@ async function listNegotiations({ admin }: { admin: boolean }): Promise<Negotiat
       ? supabase
           .from("vehicles")
           .select(
-            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
+            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,vin,origin_plate,photos,damage_report_path,appraisal_path,service_history_path,coc_path,additional_services,legalization_cost,market_price_ref,lead_time_days",
           )
       : supabase
           .from("public_vehicles")
           .select(
-            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days",
+            "id,status,make,model,variant,year,mileage,color,fuel_type,transmission,power_cv,doors,condition,description,photos,additional_services,legalization_cost,market_price_ref,lead_time_days,has_damage_report,has_appraisal,has_service_history,has_coc",
           ),
     admin
       ? supabase.from("profiles").select("id,company_name,contact_name").in("id", buyerIds)
@@ -1031,4 +1053,53 @@ export function parseBidIncrements(value: FormDataEntryValue | null): number[] {
     .filter((item) => Number.isFinite(item) && item > 0);
 
   return increments.length ? increments : [10000, 20000, 50000];
+}
+
+export type VehicleDocumentKind = "damage" | "appraisal" | "service" | "coc";
+
+export interface VehicleDocumentLink {
+  kind: VehicleDocumentKind;
+  label: string;
+  url: string;
+}
+
+const DOC_LABELS: Record<VehicleDocumentKind, string> = {
+  damage: "Relatório de danos",
+  appraisal: "Avaliação independente",
+  service: "Histórico de manutenção",
+  coc: "Certificado de conformidade (COC)",
+};
+
+export async function getVehicleDocuments(vehicleId: string): Promise<VehicleDocumentLink[]> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.rpc("get_vehicle_documents", {
+    target_vehicle_id: vehicleId,
+  });
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | {
+        damage_report_path: string | null;
+        appraisal_path: string | null;
+        service_history_path: string | null;
+        coc_path: string | null;
+      }
+    | null;
+  if (!row) return [];
+
+  const entries: { kind: VehicleDocumentKind; path: string }[] = [];
+  if (row.damage_report_path) entries.push({ kind: "damage", path: row.damage_report_path });
+  if (row.appraisal_path) entries.push({ kind: "appraisal", path: row.appraisal_path });
+  if (row.service_history_path) entries.push({ kind: "service", path: row.service_history_path });
+  if (row.coc_path) entries.push({ kind: "coc", path: row.coc_path });
+
+  const links = await Promise.all(
+    entries.map(async ({ kind, path }) => {
+      const { data: signed, error: signError } = await supabase.storage
+        .from("vehicle-documents")
+        .createSignedUrl(path, 60 * 10);
+      if (signError || !signed) return null;
+      return { kind, label: DOC_LABELS[kind], url: signed.signedUrl } as VehicleDocumentLink;
+    }),
+  );
+  return links.filter((link): link is VehicleDocumentLink => link !== null);
 }
