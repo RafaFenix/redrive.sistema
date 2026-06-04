@@ -33,12 +33,28 @@ export function AuctionTimer({ endsAt, status = "active", size = "md", className
   }, [endsAt]);
 
   if (!tick) {
-    return <span className={cn("font-mono tabular-nums tracking-tight text-muted-foreground", sizeClasses[size], className)}>--:--:--</span>;
+    return (
+      <span
+        className={cn(
+          "font-mono tabular-nums tracking-tight text-muted-foreground",
+          sizeClasses[size],
+          className,
+        )}
+      >
+        --:--:--
+      </span>
+    );
   }
 
   if (status === "ended" || tick.ended) {
     return (
-      <span className={cn("font-mono tracking-tight text-muted-foreground", sizeClasses[size], className)}>
+      <span
+        className={cn(
+          "font-mono tracking-tight text-muted-foreground",
+          sizeClasses[size],
+          className,
+        )}
+      >
         Leilão terminado
       </span>
     );
@@ -46,7 +62,13 @@ export function AuctionTimer({ endsAt, status = "active", size = "md", className
 
   if (status === "scheduled") {
     return (
-      <span className={cn("font-mono tracking-tight text-muted-foreground", sizeClasses[size], className)}>
+      <span
+        className={cn(
+          "font-mono tracking-tight text-muted-foreground",
+          sizeClasses[size],
+          className,
+        )}
+      >
         Inicia em {tick.d > 0 ? `${tick.d}d ` : ""}
         {pad(tick.h)}:{pad(tick.m)}:{pad(tick.s)}
       </span>
