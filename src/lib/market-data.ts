@@ -53,6 +53,14 @@ export interface Vehicle {
   legalizationCost: number;
   marketPriceRef?: number | null;
   leadTimeDays?: number | null;
+  hasDamageReport: boolean;
+  hasAppraisal: boolean;
+  hasServiceHistory: boolean;
+  hasCoc: boolean;
+  damageReportPath?: string | null;
+  appraisalPath?: string | null;
+  serviceHistoryPath?: string | null;
+  cocPath?: string | null;
 }
 
 export interface Auction {
@@ -164,7 +172,13 @@ type VehicleRow = {
   origin_plate?: string | null;
   photos: string[] | null;
   damage_report_path?: string | null;
+  appraisal_path?: string | null;
+  service_history_path?: string | null;
+  coc_path?: string | null;
   has_damage_report?: boolean | null;
+  has_appraisal?: boolean | null;
+  has_service_history?: boolean | null;
+  has_coc?: boolean | null;
   additional_services: { name: string; price: number }[] | null;
   legalization_cost: number;
   market_price_ref?: number | null;
@@ -296,6 +310,14 @@ export function mapVehicle(row: VehicleRow): Vehicle {
     legalizationCost: row.legalization_cost,
     marketPriceRef: row.market_price_ref,
     leadTimeDays: row.lead_time_days,
+    hasDamageReport: row.has_damage_report ?? Boolean(row.damage_report_path),
+    hasAppraisal: row.has_appraisal ?? Boolean(row.appraisal_path),
+    hasServiceHistory: row.has_service_history ?? Boolean(row.service_history_path),
+    hasCoc: row.has_coc ?? Boolean(row.coc_path),
+    damageReportPath: row.damage_report_path,
+    appraisalPath: row.appraisal_path,
+    serviceHistoryPath: row.service_history_path,
+    cocPath: row.coc_path,
   };
 }
 
