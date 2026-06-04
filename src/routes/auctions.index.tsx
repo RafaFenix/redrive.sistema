@@ -22,6 +22,11 @@ function AuctionsList() {
   const [make, setMake] = useState<string>("all");
   const [fuel, setFuel] = useState<string>("all");
   const [status, setStatus] = useState<string>("active");
+  const [yearFrom, setYearFrom] = useState<string>("");
+  const [yearTo, setYearTo] = useState<string>("");
+  const [priceMax, setPriceMax] = useState<string>("");
+  const [kmMax, setKmMax] = useState<string>("");
+  const [sort, setSort] = useState<string>("ending");
 
   useEffect(() => {
     async function loadAuctions() {
@@ -50,14 +55,46 @@ function AuctionsList() {
     return Array.from(fuelTypes).sort();
   }, [auctions]);
 
-  const filtered = auctions.filter((a) => {
-    if (status !== "all" && a.status !== status) return false;
-    const v = a.vehicle;
-    if (!v) return false;
-    if (make !== "all" && v.make !== make) return false;
-    if (fuel !== "all" && v.fuelType !== fuel) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    const yFrom = yearFrom ? Number.parseInt(yearFrom, 10) : null;
+    const yTo = yearTo ? Number.parseInt(yearTo, 10) : null;
+    const pMax = priceMax ? Number.parseInt(priceMax, 10) * 100 : null;
+    const kMax = kmMax ? Number.parseInt(kmMax, 10) : null;
+
+    const list = auctions.filter((a) => {
+      if (status !== "all" && a.status !== status) return false;
+      const v = a.vehicle;
+      if (!v) return false;
+      if (make !== "all" && v.make !== make) return false;
+      if (fuel !== "all" && v.fuelType !== fuel) return false;
+      if (yFrom && v.year < yFrom) return false;
+      if (yTo && v.year > yTo) return false;
+      if (pMax && a.currentPrice > pMax) return false;
+      if (kMax && v.mileage > kMax) return false;
+      return true;
+    });
+
+    const sorted = [...list];
+    if (sort === "ending") sorted.sort((a, b) => +new Date(a.endsAt) - +new Date(b.endsAt));
+    else if (sort === "price-asc") sorted.sort((a, b) => a.currentPrice - b.currentPrice);
+    else if (sort === "price-desc") sorted.sort((a, b) => b.currentPrice - a.currentPrice);
+    else if (sort === "year-desc")
+      sorted.sort((a, b) => (b.vehicle?.year ?? 0) - (a.vehicle?.year ?? 0));
+    else if (sort === "km-asc")
+      sorted.sort((a, b) => (a.vehicle?.mileage ?? 0) - (b.vehicle?.mileage ?? 0));
+    return sorted;
+  }, [auctions, status, make, fuel, yearFrom, yearTo, priceMax, kmMax, sort]);
+
+  function clearFilters() {
+    setMake("all");
+    setFuel("all");
+    setStatus("active");
+    setYearFrom("");
+    setYearTo("");
+    setPriceMax("");
+    setKmMax("");
+    setSort("ending");
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,7 +113,7 @@ function AuctionsList() {
         </div>
 
         {/* Filters */}
-        <div className="mb-8 grid grid-cols-2 gap-3 border border-border bg-card p-4 md:grid-cols-4">
+        <div className="mb-8 grid gap-3 border border-border bg-card p-4 md:grid-cols-4">
           <Select
             label="Estado"
             value={status}
@@ -106,14 +143,31 @@ function AuctionsList() {
               ...fuels.map((fuelType) => ({ value: fuelType, label: fuelType })),
             ]}
           />
-          <div className="flex items-end">
+          <Select
+            label="Ordenar por"
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: "ending", label: "A terminar" },
+              { value: "price-asc", label: "Preço (↑)" },
+              { value: "price-desc", label: "Preço (↓)" },
+              { value: "year-desc", label: "Ano (mais novo)" },
+              { value: "km-asc", label: "Quilometragem (↑)" },
+            ]}
+          />
+          <NumberField label="Ano desde" value={yearFrom} onChange={setYearFrom} placeholder="2015" />
+          <NumberField label="Ano até" value={yearTo} onChange={setYearTo} placeholder="2024" />
+          <NumberField
+            label="Preço máximo (€)"
+            value={priceMax}
+            onChange={setPriceMax}
+            placeholder="50000"
+          />
+          <NumberField label="Km máximo" value={kmMax} onChange={setKmMax} placeholder="150000" />
+          <div className="flex items-end md:col-span-4">
             <button
-              onClick={() => {
-                setMake("all");
-                setFuel("all");
-                setStatus("active");
-              }}
-              className="w-full border border-border py-2 text-xs font-bold uppercase tracking-wider hover:bg-muted"
+              onClick={clearFilters}
+              className="border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-muted"
             >
               Limpar filtros
             </button>
@@ -163,6 +217,34 @@ function Select({
           </option>
         ))}
       </select>
+    </label>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </span>
+      <input
+        type="number"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+      />
     </label>
   );
 }
