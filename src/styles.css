@@ -114,45 +114,25 @@
 }
 
 @keyframes pulse-red {
-  0%,
-  100% {
-    color: var(--color-primary);
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { color: var(--color-primary); opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 @keyframes slide-in-up {
-  from {
-    transform: translateY(-8px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-.animate-pulse-red {
-  animation: pulse-red 1s ease-in-out infinite;
-}
-.animate-slide-up {
-  animation: slide-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+.animate-pulse-red { animation: pulse-red 1s ease-in-out infinite; }
+.animate-slide-up { animation: slide-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
+  * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "cv11", "ss01";
   }
-  .font-mono {
-    font-variant-numeric: tabular-nums;
-  }
+  .font-mono { font-variant-numeric: tabular-nums; }
 }

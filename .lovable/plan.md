@@ -1,9 +1,9 @@
+
 # ReDrive — Plano para versão funcional (PRD v1.1)
 
 ## 1. O que já está feito (visual / mock)
 
 Frontend completo em **TanStack Start** (não Next.js — adaptado) com dados mock:
-
 - Design system "Terminal precision" (`src/styles.css`)
 - Componentes: `AuctionTimer`, `BidPanel`, `BidHistory`, `ReserveIndicator`, `VehicleCard`, `VehicleGallery`
 - Layouts e navegação: público, buyer, admin
@@ -25,7 +25,6 @@ Para ter algo **funcional rapidamente**, divido em fases. A Fase A é o mínimo 
 Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 
 **A.1 — Backend base**
-
 - Ativar Lovable Cloud (Supabase gerido)
 - Migration com schema PRD v1.1 mas reduzido:
   - `profiles`, `user_roles` (separado, padrão Lovable), `vehicles`, `auctions`, `bids`, `orders`, `negotiations`, `negotiation_rounds`, `notifications`, `watchlist`
@@ -36,14 +35,12 @@ Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 - Views públicas: `public_vehicles`, `public_auctions` (sem `vin`, `origin_plate`, `purchase_price`, `reserve_price`)
 
 **A.2 — Auth**
-
 - Email + password (sem Google nesta fase, simplificar)
 - Trigger auto-criar `profile` com `status='pending'` no signup
 - Rota `_authenticated/` (integração-managed) + verificação de role/status nos layouts buyer/admin
 - Rota `/reset-password`
 
 **A.3 — Server functions críticas (createServerFn)**
-
 - `placeBid` — com toda a lógica do PRD §6.1 (validação, outbid, extensão 2min, criar notification, broadcast)
 - `buyNow` — encerra leilão imediato
 - `closeAuction` (chamada por cron)
@@ -55,19 +52,16 @@ Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 - `submitCounterOffer` / `acceptOffer` / `rejectOffer` (negociações, máx 5 rondas)
 
 **A.4 — Realtime**
-
 - Canal `auction:{id}` — broadcast em cada `placeBid`
 - Canal `user:{id}` — notificações in-app
 - Hooks `useAuctionRealtime()` e `useNotifications()` para subscrever
 
 **A.5 — Storage**
-
 - Bucket `vehicle-photos` (público)
 - Bucket `vehicle-documents` (privado, signed URLs para damage/appraisal/service)
 - Bucket `trade-registry` (privado, só admin acede)
 
 **A.6 — Cron (pg_cron)**
-
 - `close-auctions` (cada minuto) → chama `/api/public/close-auctions` com secret
 - `activate-auctions` (cada minuto) → UPDATE direto SQL
 - `notify-watchlist-1h` (cada 5 min) → endpoint público
@@ -75,7 +69,6 @@ Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 - Rota `src/routes/api/public/close-auctions.ts` com verificação por header secret
 
 **A.7 — Ligar frontend ao backend**
-
 - Substituir `mock-data.ts` por queries reais via TanStack Query + server functions
 - `BidPanel` chama `placeBid` real, mostra erros do servidor
 - Listagem com filtros funcionais
@@ -84,7 +77,6 @@ Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 - Página `/buyer/won/$id` com timeline `delivery_status`
 
 **A.8 — Critérios de aceitação Fase A**
-
 - Admin cria viatura + leilão
 - Buyer regista, admin aprova, buyer licita
 - Realtime: outro browser vê o lance aparecer
@@ -120,7 +112,6 @@ Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 **Localhost:** Lovable Cloud funciona automaticamente em dev — o preview já é "localhost" para o utilizador. Quando estiver pronto, basta publicar.
 
 **Ordem de execução dentro da Fase A:**
-
 1. Schema + RLS + views
 2. Auth + trigger profile
 3. CRUD admin (vehicles, auctions) ligado
@@ -133,7 +124,6 @@ Objetivo: ciclo completo de leilão funcional em localhost via Lovable Cloud.
 ## 4. Decisão necessária
 
 Para começar a Fase A preciso de:
-
 1. **Ativar Lovable Cloud** — vou pedir-te para ativar nas configurações (necessário para qualquer backend).
 2. **Confirmar campos do `profiles`** que listo em A.1 (company_name, vat_number, contact_name, contact_phone, address/city/country, delivery_address/city/country, trade_registry URL). Está OK?
 3. **Idioma das mensagens de erro do servidor:** português (consistente com UI), certo?

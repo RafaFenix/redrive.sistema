@@ -238,8 +238,7 @@ export const vehicles: Vehicle[] = [
     power: "480 cv",
     doors: 2,
     condition: "Excelente",
-    description:
-      "Porsche 911 Carrera GTS, pacote Sport Chrono, escape desportivo, bancos desportivos adaptáveis Plus.",
+    description: "Porsche 911 Carrera GTS, pacote Sport Chrono, escape desportivo, bancos desportivos adaptáveis Plus.",
     vin: "WP0ZZZ99ZLS200118",
     originPlate: "S-PO 9921",
     photos: PHOTOS.porsche911,
@@ -374,8 +373,7 @@ export const vehicles: Vehicle[] = [
     power: "190 cv",
     doors: 5,
     condition: "Razoável",
-    description:
-      "BMW 320d Touring com pequenos danos cosméticos no para-choques traseiro (ver relatório).",
+    description: "BMW 320d Touring com pequenos danos cosméticos no para-choques traseiro (ver relatório).",
     vin: "WBA5K71050B112233",
     originPlate: "M-BM 3210",
     photos: PHOTOS.bmwM4,
@@ -533,12 +531,7 @@ export const auctions: Auction[] = [
 
 const HINTS = ["PORS***", "VWAG***", "RENA***", "ALFA***", "MERC***", "AUDI***"];
 
-function genBids(
-  auctionId: string,
-  currentPrice: number,
-  count: number,
-  startingPrice: number,
-): Bid[] {
+function genBids(auctionId: string, currentPrice: number, count: number, startingPrice: number): Bid[] {
   if (count === 0) return [];
   const step = Math.max(10000, Math.floor((currentPrice - startingPrice) / Math.max(count, 1)));
   return Array.from({ length: count }).map((_, i) => {
@@ -615,7 +608,9 @@ export function getAuction(id: string): Auction | undefined {
 }
 
 export function getBidsForAuction(auctionId: string): Bid[] {
-  return bids.filter((b) => b.auctionId === auctionId).sort((a, b) => b.amount - a.amount);
+  return bids
+    .filter((b) => b.auctionId === auctionId)
+    .sort((a, b) => b.amount - a.amount);
 }
 
 export function getProfile(id: string): Profile | undefined {
