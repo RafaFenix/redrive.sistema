@@ -18,14 +18,16 @@ export function BrandCarousel({ auctions }: BrandCarouselProps) {
   const brands = getTopBrandsByCount(auctions, 10);
 
   useEffect(() => {
-    if (!emblaApi) return;
+    if (!emblaApi) return undefined;
     const updateButtons = () => {
       setCanScrollPrev(emblaApi.canScrollPrev());
       setCanScrollNext(emblaApi.canScrollNext());
     };
     updateButtons();
     emblaApi.on("select", updateButtons);
-    return () => emblaApi.off("select", updateButtons);
+    return () => {
+      emblaApi.off("select", updateButtons);
+    };
   }, [emblaApi]);
 
   if (brands.length === 0) return null;

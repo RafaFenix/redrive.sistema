@@ -10,14 +10,16 @@ export function TestimonialCarousel() {
   const [canScrollNext, setCanScrollNext] = useState(true);
 
   useEffect(() => {
-    if (!emblaApi) return;
+    if (!emblaApi) return undefined;
     const updateButtons = () => {
       setCanScrollPrev(emblaApi.canScrollPrev());
       setCanScrollNext(emblaApi.canScrollNext());
     };
     updateButtons();
     emblaApi.on("select", updateButtons);
-    return () => emblaApi.off("select", updateButtons);
+    return () => {
+      emblaApi.off("select", updateButtons);
+    };
   }, [emblaApi]);
 
   return (
