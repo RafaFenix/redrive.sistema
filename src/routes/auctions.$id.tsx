@@ -4,9 +4,11 @@ import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleGallery } from "@/components/vehicle/VehicleGallery";
 import { BidPanel } from "@/components/auction/BidPanel";
 import { BidHistory } from "@/components/auction/BidHistory";
+import { DocumentsList } from "@/components/auction/DocumentsList";
+import { MarketPriceHint } from "@/components/auction/MarketPriceHint";
 import { formatEUR, formatNumber, getPublicAuction } from "@/lib/market-data";
 import { useAuctionRealtime } from "@/hooks/use-auction-realtime";
-import { FileText, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/auctions/$id")({
   loader: async ({ params }) => {
@@ -44,7 +46,8 @@ export const Route = createFileRoute("/auctions/$id")({
 function AuctionDetail() {
   const router = useRouter();
   const { auction, vehicle, bids } = Route.useLoaderData();
-  const hasDamageReport = vehicle.damageReportUrl !== "#";
+  const hasAnyDocument =
+    vehicle.hasDamageReport || vehicle.hasAppraisal || vehicle.hasServiceHistory || vehicle.hasCoc;
   const refreshAuction = useCallback(() => router.invalidate(), [router]);
 
   useAuctionRealtime(auction.id, refreshAuction);
@@ -65,11 +68,17 @@ function AuctionDetail() {
             <h1 className="text-3xl font-extrabold tracking-tight text-balance">
               {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.variant}
             </h1>
-            <div className="flex gap-2">
-              {hasDamageReport && (
+            <div className="flex flex-wrap gap-2">
+              {vehicle.hasDamageReport && (
                 <span className="inline-flex items-center gap-1.5 border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase text-primary">
                   <AlertTriangle className="size-3" />
-                  Relatório de danos disponível
+                  Relatório de danos
+                </span>
+              )}
+              {typeof vehicle.leadTimeDays === "number" && vehicle.leadTimeDays > 0 && (
+                <span className="inline-flex items-center gap-1.5 border border-border bg-muted/40 px-2.5 py-1 text-xs font-bold uppercase text-muted-foreground">
+                  <Clock className="size-3" />
+                  {vehicle.leadTimeDays} dias de entrega
                 </span>
               )}
             </div>
@@ -106,27 +115,15 @@ function AuctionDetail() {
               <p className="text-sm leading-relaxed text-foreground">{vehicle.description}</p>
             </div>
 
-            {/* Damage report */}
-            {hasDamageReport && (
-              <div className="rounded-sm border border-border bg-card p-6 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      Relatório de danos
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Inspeção certificada de 150 pontos · PDF
-                    </p>
-                  </div>
-                  <a
-                    href={vehicle.damageReportUrl}
-                    className="inline-flex items-center gap-2 border border-foreground px-4 py-2 text-xs font-bold uppercase tracking-wider hover:bg-foreground hover:text-background"
-                  >
-                    <FileText className="size-3.5" />
-                    Ver PDF
-                  </a>
-                </div>
-              </div>
+            {/* Documents (signed URLs for approved buyers) */}
+            {hasAnyDocument && (
+              <DocumentsList
+                vehicleId={vehicle.id}
+                hasDamageReport={vehicle.hasDamageReport}
+                hasAppraisal={vehicle.hasAppraisal}
+                hasServiceHistory={vehicle.hasServiceHistory}
+                hasCoc={vehicle.hasCoc}
+              />
             )}
 
             {/* Additional services */}
