@@ -81,6 +81,19 @@ export const TESTIMONIALS: Testimonial[] = [
   },
 ];
 
+export const BRAND_LOGOS: Record<string, string> = {
+  BMW: "https://upload.wikimedia.org/wikipedia/commons/1/18/BMW_logo.svg",
+  Porsche: "https://upload.wikimedia.org/wikipedia/commons/5/54/Porsche_logo.svg",
+  Volkswagen: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Volkswagen_logo_2019.svg",
+  "Mercedes-Benz": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Mercedes_Benz_logo.svg",
+  Audi: "https://upload.wikimedia.org/wikipedia/commons/e/ed/Audi_logo_forward.svg",
+  Skoda: "https://upload.wikimedia.org/wikipedia/commons/b/b9/Skoda_logo.svg",
+  Seat: "https://upload.wikimedia.org/wikipedia/commons/1/1f/SEAT_logo.svg",
+  Fiat: "https://upload.wikimedia.org/wikipedia/commons/9/96/Fiat_logo.png",
+  Ford: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Ford_Motor_Company_logo.svg/1024px-Ford_Motor_Company_logo.svg.png",
+  Opel: "https://upload.wikimedia.org/wikipedia/commons/2/2e/Opel_logo.svg",
+};
+
 export function buildSearchUrl(make?: string, model?: string, maxPrice?: string): string {
   const params = new URLSearchParams();
   if (make && make !== "all") params.set("make", make);

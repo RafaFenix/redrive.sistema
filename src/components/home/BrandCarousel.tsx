@@ -3,7 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Auction } from "@/lib/market-data";
-import { getTopBrandsByCount } from "@/lib/home-helpers";
+import { getTopBrandsByCount, BRAND_LOGOS } from "@/lib/home-helpers";
 
 interface BrandCarouselProps {
   auctions: Auction[];
@@ -39,34 +39,49 @@ export function BrandCarousel({ auctions }: BrandCarouselProps) {
       <div className="relative">
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-4">
-            {brands.map((brand) => (
-              <div
-                key={brand.brand}
-                className="flex-[0_0_calc(25%-12px)] min-w-0 md:flex-[0_0_calc(20%-12px)]"
-              >
-                <button
-                  onClick={() => navigate({ to: `/auctions?make=${brand.brand}` })}
-                  className="w-full space-y-2 rounded-lg border border-border bg-card p-6 text-center transition hover:shadow-md"
+            {brands.map((brand) => {
+              const logoUrl = BRAND_LOGOS[brand.brand];
+              return (
+                <div
+                  key={brand.brand}
+                  className="flex-[0_0_calc(25%-12px)] min-w-0 md:flex-[0_0_calc(20%-12px)]"
                 >
-                  <p className="text-lg font-semibold text-foreground">{brand.brand}</p>
-                  <p className="text-sm text-muted-foreground">{brand.count} leilões</p>
-                </button>
-              </div>
-            ))}
+                  <button
+                    onClick={() => navigate({ to: `/auctions?make=${brand.brand}` })}
+                    className="w-full space-y-3 rounded-lg border border-border bg-card p-6 text-center transition hover:shadow-md"
+                  >
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt={brand.brand}
+                        className="mx-auto h-12 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : null}
+                    <div>
+                      <p className="text-lg font-semibold text-foreground">{brand.brand}</p>
+                      <p className="text-sm text-muted-foreground">{brand.count} leilões</p>
+                    </div>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         <button
           onClick={() => emblaApi?.scrollPrev()}
           disabled={!canScrollPrev}
-          className="absolute -left-12 top-1/2 -translate-y-1/2 disabled:opacity-30"
+          className="absolute -left-12 top-1/2 -translate-y-1/2 transition disabled:opacity-30 hover:opacity-100"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
         <button
           onClick={() => emblaApi?.scrollNext()}
           disabled={!canScrollNext}
-          className="absolute -right-12 top-1/2 -translate-y-1/2 disabled:opacity-30"
+          className="absolute -right-12 top-1/2 -translate-y-1/2 transition disabled:opacity-30 hover:opacity-100"
         >
           <ChevronRight className="h-6 w-6" />
         </button>
