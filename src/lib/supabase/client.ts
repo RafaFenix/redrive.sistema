@@ -26,7 +26,6 @@ export function getSupabaseClient() {
     FALLBACK_SUPABASE_PUBLISHABLE_KEY,
   );
 
-
   supabaseClient = createClient(supabaseUrl, publishableKey, {
     auth: {
       persistSession: true,
