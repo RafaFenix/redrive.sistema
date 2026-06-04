@@ -154,6 +154,10 @@ function AuctionDetail() {
           <div className="lg:col-span-4">
             <div className="sticky top-20 space-y-4">
               <BidPanel auction={auction} onBidPlaced={refreshAuction} />
+              <MarketPriceHint
+                currentPrice={auction.currentPrice}
+                marketPriceRef={vehicle.marketPriceRef}
+              />
               <BidHistory bids={bids} />
             </div>
           </div>
