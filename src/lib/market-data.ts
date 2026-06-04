@@ -1054,3 +1054,52 @@ export function parseBidIncrements(value: FormDataEntryValue | null): number[] {
 
   return increments.length ? increments : [10000, 20000, 50000];
 }
+
+export type VehicleDocumentKind = "damage" | "appraisal" | "service" | "coc";
+
+export interface VehicleDocumentLink {
+  kind: VehicleDocumentKind;
+  label: string;
+  url: string;
+}
+
+const DOC_LABELS: Record<VehicleDocumentKind, string> = {
+  damage: "Relatório de danos",
+  appraisal: "Avaliação independente",
+  service: "Histórico de manutenção",
+  coc: "Certificado de conformidade (COC)",
+};
+
+export async function getVehicleDocuments(vehicleId: string): Promise<VehicleDocumentLink[]> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.rpc("get_vehicle_documents", {
+    target_vehicle_id: vehicleId,
+  });
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | {
+        damage_report_path: string | null;
+        appraisal_path: string | null;
+        service_history_path: string | null;
+        coc_path: string | null;
+      }
+    | null;
+  if (!row) return [];
+
+  const entries: { kind: VehicleDocumentKind; path: string }[] = [];
+  if (row.damage_report_path) entries.push({ kind: "damage", path: row.damage_report_path });
+  if (row.appraisal_path) entries.push({ kind: "appraisal", path: row.appraisal_path });
+  if (row.service_history_path) entries.push({ kind: "service", path: row.service_history_path });
+  if (row.coc_path) entries.push({ kind: "coc", path: row.coc_path });
+
+  const links = await Promise.all(
+    entries.map(async ({ kind, path }) => {
+      const { data: signed, error: signError } = await supabase.storage
+        .from("vehicle-documents")
+        .createSignedUrl(path, 60 * 10);
+      if (signError || !signed) return null;
+      return { kind, label: DOC_LABELS[kind], url: signed.signedUrl } as VehicleDocumentLink;
+    }),
+  );
+  return links.filter((link): link is VehicleDocumentLink => link !== null);
+}
