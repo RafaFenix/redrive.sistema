@@ -6,14 +6,18 @@ import {
   ChevronDown,
   Fuel,
   Gauge,
+  Gavel,
   Search,
   SlidersHorizontal,
   Sparkles,
   Zap,
 } from "lucide-react";
+import { AuctionTenderList, type AuctionTenderGroup } from "@/components/auction/AuctionTenderList";
 import { PublicHeader } from "@/components/layout/PublicHeader";
 import { VehicleListItem } from "@/components/vehicle/VehicleListItem";
 import { Auction, listPublicAuctions } from "@/lib/market-data";
+
+type CatalogTab = "auctions" | "cars";
 
 export const Route = createFileRoute("/auctions/")({
   head: () => ({
@@ -30,7 +34,9 @@ export const Route = createFileRoute("/auctions/")({
 
 function AuctionsList() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [tab, setTab] = useState<CatalogTab>("auctions");
   const [query, setQuery] = useState("");
+  const [auctionType, setAuctionType] = useState("all");
   const [make, setMake] = useState("all");
   const [model, setModel] = useState("all");
   const [fuel, setFuel] = useState("all");
@@ -61,6 +67,7 @@ function AuctionsList() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    setTab(params.get("tab") === "cars" ? "cars" : "auctions");
     setQuery(params.get("q") || "");
     setStatus(params.get("status") || "active");
     setMake(params.get("make") || "all");
@@ -82,6 +89,7 @@ function AuctionsList() {
     if (!searchReady) return;
 
     const params = new URLSearchParams();
+    params.set("tab", tab);
     if (query) params.set("q", query);
     if (status !== "active") params.set("status", status);
     if (make !== "all") params.set("make", make);
@@ -116,6 +124,7 @@ function AuctionsList() {
     searchReady,
     sort,
     status,
+    tab,
     transmission,
     yearFrom,
     yearTo,
@@ -123,7 +132,9 @@ function AuctionsList() {
 
   const makes = useMemo(() => {
     const vehicleMakes = new Set(
-      auctions.map((auction) => auction.vehicle?.make).filter((v): v is string => Boolean(v)),
+      auctions
+        .map((auction) => auction.vehicle?.make)
+        .filter((value): value is string => Boolean(value)),
     );
     return Array.from(vehicleMakes).sort();
   }, [auctions]);
@@ -133,14 +144,16 @@ function AuctionsList() {
       auctions
         .filter((auction) => make === "all" || auction.vehicle?.make === make)
         .map((auction) => auction.vehicle?.model)
-        .filter((v): v is string => Boolean(v)),
+        .filter((value): value is string => Boolean(value)),
     );
     return Array.from(vehicleModels).sort();
   }, [auctions, make]);
 
   const fuels = useMemo(() => {
     const fuelTypes = new Set(
-      auctions.map((auction) => auction.vehicle?.fuelType).filter((v): v is string => Boolean(v)),
+      auctions
+        .map((auction) => auction.vehicle?.fuelType)
+        .filter((value): value is string => Boolean(value)),
     );
     return Array.from(fuelTypes).sort();
   }, [auctions]);
@@ -149,21 +162,22 @@ function AuctionsList() {
     const values = new Set(
       auctions
         .map((auction) => auction.vehicle?.transmission)
-        .filter((v): v is string => Boolean(v)),
+        .filter((value): value is string => Boolean(value)),
     );
     return Array.from(values).sort();
   }, [auctions]);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const yFrom = yearFrom ? Number.parseInt(yearFrom, 10) : null;
-    const yTo = yearTo ? Number.parseInt(yearTo, 10) : null;
-    const pMin = priceMin ? Number.parseInt(priceMin, 10) * 100 : null;
-    const pMax = priceMax ? Number.parseInt(priceMax, 10) * 100 : null;
-    const kMax = kmMax ? Number.parseInt(kmMax, 10) : null;
+    const yearMin = yearFrom ? Number.parseInt(yearFrom, 10) : null;
+    const yearMax = yearTo ? Number.parseInt(yearTo, 10) : null;
+    const minimumPrice = priceMin ? Number.parseInt(priceMin, 10) * 100 : null;
+    const maximumPrice = priceMax ? Number.parseInt(priceMax, 10) * 100 : null;
+    const maximumMileage = kmMax ? Number.parseInt(kmMax, 10) : null;
 
     const list = auctions.filter((auction) => {
       if (status !== "all" && auction.status !== status) return false;
+      if (tab === "auctions" && !matchesAuctionType(auction, auctionType)) return false;
 
       const vehicle = auction.vehicle;
       if (!vehicle) return false;
@@ -188,11 +202,11 @@ function AuctionsList() {
       if (model !== "all" && vehicle.model !== model) return false;
       if (fuel !== "all" && vehicle.fuelType !== fuel) return false;
       if (transmission !== "all" && vehicle.transmission !== transmission) return false;
-      if (yFrom && vehicle.year < yFrom) return false;
-      if (yTo && vehicle.year > yTo) return false;
-      if (pMin && auction.currentPrice < pMin) return false;
-      if (pMax && auction.currentPrice > pMax) return false;
-      if (kMax && vehicle.mileage > kMax) return false;
+      if (yearMin && vehicle.year < yearMin) return false;
+      if (yearMax && vehicle.year > yearMax) return false;
+      if (minimumPrice && auction.currentPrice < minimumPrice) return false;
+      if (maximumPrice && auction.currentPrice > maximumPrice) return false;
+      if (maximumMileage && vehicle.mileage > maximumMileage) return false;
       if (hasCoc && !vehicle.hasCoc) return false;
       if (immediate && (vehicle.leadTimeDays ?? 0) > 0) return false;
 
@@ -210,6 +224,7 @@ function AuctionsList() {
 
     return sorted;
   }, [
+    auctionType,
     auctions,
     fuel,
     hasCoc,
@@ -222,6 +237,7 @@ function AuctionsList() {
     query,
     sort,
     status,
+    tab,
     transmission,
     yearFrom,
     yearTo,
@@ -229,6 +245,7 @@ function AuctionsList() {
 
   function clearFilters() {
     setQuery("");
+    setAuctionType("all");
     setMake("all");
     setModel("all");
     setFuel("all");
@@ -244,6 +261,11 @@ function AuctionsList() {
     setSort("ending");
   }
 
+  function openTender(group: AuctionTenderGroup) {
+    setTab("cars");
+    setQuery(group.auctions[0]?.lotNumber ?? "");
+  }
+
   return (
     <div className="min-h-screen bg-[#f2f4f7]">
       <PublicHeader />
@@ -257,12 +279,12 @@ function AuctionsList() {
                 Procurar
               </h2>
               <div className="mt-3 grid grid-cols-2 rounded-xl bg-muted p-1 text-sm font-bold">
-                <button type="button" className="rounded-lg bg-white py-2 text-[#20242b] shadow-sm">
+                <TabButton active={tab === "auctions"} onClick={() => setTab("auctions")}>
                   Leilões
-                </button>
-                <button type="button" className="py-2 text-muted-foreground">
+                </TabButton>
+                <TabButton active={tab === "cars"} onClick={() => setTab("cars")}>
                   Carro
-                </button>
+                </TabButton>
               </div>
               <label className="mt-3 flex items-center gap-2 rounded-full border border-border px-3 py-2">
                 <Search className="size-4 text-muted-foreground" />
@@ -276,114 +298,45 @@ function AuctionsList() {
             </div>
 
             <div className="space-y-2 p-3">
-              <FilterGroup icon={Car} title="Estado">
-                <Select
-                  label="Estado"
-                  value={status}
-                  onChange={setStatus}
-                  options={[
-                    { value: "all", label: "Todos" },
-                    { value: "active", label: "Ao vivo" },
-                    { value: "scheduled", label: "Em breve" },
-                    { value: "ended", label: "Terminados" },
-                  ]}
+              {tab === "auctions" ? (
+                <AuctionFilters
+                  auctions={auctions}
+                  filteredCount={filtered.length}
+                  auctionType={auctionType}
+                  setAuctionType={setAuctionType}
                 />
-              </FilterGroup>
-
-              <FilterGroup icon={SlidersHorizontal} title="Marca e modelo">
-                <Select
-                  label="Marca"
-                  value={make}
-                  onChange={(value) => {
-                    setMake(value);
-                    setModel("all");
-                  }}
-                  options={[
-                    { value: "all", label: "Todas" },
-                    ...makes.map((m) => ({ value: m, label: m })),
-                  ]}
+              ) : (
+                <CarFilters
+                  makes={makes}
+                  models={models}
+                  fuels={fuels}
+                  transmissions={transmissions}
+                  make={make}
+                  setMake={setMake}
+                  model={model}
+                  setModel={setModel}
+                  fuel={fuel}
+                  setFuel={setFuel}
+                  transmission={transmission}
+                  setTransmission={setTransmission}
+                  status={status}
+                  setStatus={setStatus}
+                  yearFrom={yearFrom}
+                  setYearFrom={setYearFrom}
+                  yearTo={yearTo}
+                  setYearTo={setYearTo}
+                  priceMin={priceMin}
+                  setPriceMin={setPriceMin}
+                  priceMax={priceMax}
+                  setPriceMax={setPriceMax}
+                  kmMax={kmMax}
+                  setKmMax={setKmMax}
+                  hasCoc={hasCoc}
+                  setHasCoc={setHasCoc}
+                  immediate={immediate}
+                  setImmediate={setImmediate}
                 />
-                <Select
-                  label="Modelo"
-                  value={model}
-                  onChange={setModel}
-                  options={[
-                    { value: "all", label: "Todos" },
-                    ...models.map((m) => ({ value: m, label: m })),
-                  ]}
-                />
-              </FilterGroup>
-
-              <FilterGroup icon={Fuel} title="Combustível">
-                <Select
-                  label="Combustível"
-                  value={fuel}
-                  onChange={setFuel}
-                  options={[
-                    { value: "all", label: "Todos" },
-                    ...fuels.map((fuelType) => ({ value: fuelType, label: fuelType })),
-                  ]}
-                />
-              </FilterGroup>
-
-              <FilterGroup icon={CalendarDays} title="Primeiro registo">
-                <div className="grid grid-cols-2 gap-2">
-                  <NumberField
-                    label="Desde"
-                    value={yearFrom}
-                    onChange={setYearFrom}
-                    placeholder="2020"
-                  />
-                  <NumberField label="Até" value={yearTo} onChange={setYearTo} placeholder="2024" />
-                </div>
-              </FilterGroup>
-
-              <FilterGroup icon={Zap} title="Mudanças">
-                <Select
-                  label="Transmissão"
-                  value={transmission}
-                  onChange={setTransmission}
-                  options={[
-                    { value: "all", label: "Todas" },
-                    ...transmissions.map((value) => ({ value, label: value })),
-                  ]}
-                />
-              </FilterGroup>
-
-              <FilterGroup icon={Gauge} title="Quilometragem">
-                <NumberField
-                  label="Km máximo"
-                  value={kmMax}
-                  onChange={setKmMax}
-                  placeholder="150000"
-                />
-              </FilterGroup>
-
-              <FilterGroup icon={Sparkles} title="Preço">
-                <div className="grid grid-cols-2 gap-2">
-                  <NumberField
-                    label="Mínimo"
-                    value={priceMin}
-                    onChange={setPriceMin}
-                    placeholder="10000"
-                  />
-                  <NumberField
-                    label="Máximo"
-                    value={priceMax}
-                    onChange={setPriceMax}
-                    placeholder="50000"
-                  />
-                </div>
-              </FilterGroup>
-
-              <FilterGroup icon={Sparkles} title="Documentos e entrega">
-                <ToggleField label="COC disponível" checked={hasCoc} onChange={setHasCoc} />
-                <ToggleField
-                  label="Disponível imediatamente"
-                  checked={immediate}
-                  onChange={setImmediate}
-                />
-              </FilterGroup>
+              )}
             </div>
 
             <div className="border-t border-border p-3">
@@ -391,7 +344,7 @@ function AuctionsList() {
                 type="button"
                 className="w-full rounded-full bg-primary px-4 py-3 text-sm font-extrabold text-primary-foreground transition hover:bg-primary/90"
               >
-                Mostrar {filtered.length} veículos
+                Mostrar {filtered.length} {tab === "auctions" ? "leilões" : "veículos"}
               </button>
               <button
                 type="button"
@@ -409,7 +362,9 @@ function AuctionsList() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h1 className="text-xl font-extrabold uppercase tracking-tight text-[#20242b]">
-                  Resultados da pesquisa ({filtered.length} veículos)
+                  {tab === "auctions"
+                    ? `Resumo do leilão (${filtered.length} veículos)`
+                    : `Resultados da pesquisa (${filtered.length} veículos)`}
                 </h1>
                 <div className="mt-2 h-0.5 w-full max-w-4xl bg-primary" />
               </div>
@@ -428,7 +383,9 @@ function AuctionsList() {
             </div>
           </div>
 
-          {filtered.length === 0 ? (
+          {tab === "auctions" ? (
+            <AuctionTenderList auctions={filtered} onOpenTender={openTender} />
+          ) : filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-white p-12 text-center text-muted-foreground">
               Sem resultados para estes filtros.
             </div>
@@ -441,6 +398,297 @@ function AuctionsList() {
           )}
         </section>
       </main>
+    </div>
+  );
+}
+
+function matchesAuctionType(auction: Auction, auctionType: string) {
+  if (auctionType === "all") return true;
+  if (auctionType === "fixed") return auction.buyNowPrice !== null;
+  if (auctionType === "open") return auction.mode !== "blind" && auction.status === "active";
+  if (auctionType === "blind") return auction.mode === "blind";
+  if (auctionType === "buy-now") return auction.buyNowPrice !== null;
+  return true;
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active ? "rounded-lg bg-white py-2 text-[#20242b] shadow-sm" : "py-2 text-muted-foreground"
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function AuctionFilters({
+  auctions,
+  filteredCount,
+  auctionType,
+  setAuctionType,
+}: {
+  auctions: Auction[];
+  filteredCount: number;
+  auctionType: string;
+  setAuctionType: (value: string) => void;
+}) {
+  return (
+    <>
+      <FilterGroup icon={Gavel} title="Tipo de leilão">
+        <AuctionTypeOption
+          label="Todos"
+          count={auctions.length}
+          checked={auctionType === "all"}
+          onClick={() => setAuctionType("all")}
+        />
+        <AuctionTypeOption
+          label="Preços fixos"
+          count={auctions.filter((auction) => auction.buyNowPrice !== null).length}
+          checked={auctionType === "fixed"}
+          onClick={() => setAuctionType("fixed")}
+        />
+        <AuctionTypeOption
+          label="Leilão aberto"
+          count={
+            auctions.filter((auction) => auction.mode !== "blind" && auction.status === "active")
+              .length
+          }
+          checked={auctionType === "open"}
+          onClick={() => setAuctionType("open")}
+        />
+        <AuctionTypeOption
+          label="Leilões às cegas"
+          count={auctions.filter((auction) => auction.mode === "blind").length}
+          checked={auctionType === "blind"}
+          onClick={() => setAuctionType("blind")}
+        />
+        <AuctionTypeOption
+          label="Aposte ou Compre Agora"
+          count={auctions.filter((auction) => auction.buyNowPrice !== null).length}
+          checked={auctionType === "buy-now"}
+          onClick={() => setAuctionType("buy-now")}
+        />
+      </FilterGroup>
+
+      <FilterGroup icon={Car} title="País">
+        <DisabledFilter label="Bélgica" count={0} />
+        <DisabledFilter label="Países Baixos" count={0} />
+        <DisabledFilter label="França" count={0} />
+        <DisabledFilter label="Luxemburgo" count={0} />
+        <DisabledFilter label="Itália" count={0} />
+        <DisabledFilter label="Alemanha" count={0} />
+        <DisabledFilter label="Espanha" count={0} />
+      </FilterGroup>
+
+      <FilterGroup icon={Car} title="Tipo de carroceria">
+        <DisabledFilter label="Veículos pessoais" count={filteredCount} />
+        <DisabledFilter label="Veículos comerciais ligeiros" count={0} />
+      </FilterGroup>
+    </>
+  );
+}
+
+function CarFilters({
+  makes,
+  models,
+  fuels,
+  transmissions,
+  make,
+  setMake,
+  model,
+  setModel,
+  fuel,
+  setFuel,
+  transmission,
+  setTransmission,
+  status,
+  setStatus,
+  yearFrom,
+  setYearFrom,
+  yearTo,
+  setYearTo,
+  priceMin,
+  setPriceMin,
+  priceMax,
+  setPriceMax,
+  kmMax,
+  setKmMax,
+  hasCoc,
+  setHasCoc,
+  immediate,
+  setImmediate,
+}: {
+  makes: string[];
+  models: string[];
+  fuels: string[];
+  transmissions: string[];
+  make: string;
+  setMake: (value: string) => void;
+  model: string;
+  setModel: (value: string) => void;
+  fuel: string;
+  setFuel: (value: string) => void;
+  transmission: string;
+  setTransmission: (value: string) => void;
+  status: string;
+  setStatus: (value: string) => void;
+  yearFrom: string;
+  setYearFrom: (value: string) => void;
+  yearTo: string;
+  setYearTo: (value: string) => void;
+  priceMin: string;
+  setPriceMin: (value: string) => void;
+  priceMax: string;
+  setPriceMax: (value: string) => void;
+  kmMax: string;
+  setKmMax: (value: string) => void;
+  hasCoc: boolean;
+  setHasCoc: (value: boolean) => void;
+  immediate: boolean;
+  setImmediate: (value: boolean) => void;
+}) {
+  return (
+    <>
+      <FilterGroup icon={Car} title="Estado">
+        <Select
+          label="Estado"
+          value={status}
+          onChange={setStatus}
+          options={[
+            { value: "all", label: "Todos" },
+            { value: "active", label: "Ao vivo" },
+            { value: "scheduled", label: "Em breve" },
+            { value: "ended", label: "Terminados" },
+          ]}
+        />
+      </FilterGroup>
+
+      <FilterGroup icon={SlidersHorizontal} title="Marca e modelo">
+        <Select
+          label="Marca"
+          value={make}
+          onChange={(value) => {
+            setMake(value);
+            setModel("all");
+          }}
+          options={[
+            { value: "all", label: "Todas" },
+            ...makes.map((m) => ({ value: m, label: m })),
+          ]}
+        />
+        <Select
+          label="Modelo"
+          value={model}
+          onChange={setModel}
+          options={[
+            { value: "all", label: "Todos" },
+            ...models.map((m) => ({ value: m, label: m })),
+          ]}
+        />
+      </FilterGroup>
+
+      <FilterGroup icon={Fuel} title="Combustível">
+        <Select
+          label="Combustível"
+          value={fuel}
+          onChange={setFuel}
+          options={[
+            { value: "all", label: "Todos" },
+            ...fuels.map((fuelType) => ({ value: fuelType, label: fuelType })),
+          ]}
+        />
+      </FilterGroup>
+
+      <FilterGroup icon={CalendarDays} title="Primeiro registo">
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField label="Desde" value={yearFrom} onChange={setYearFrom} placeholder="2020" />
+          <NumberField label="Até" value={yearTo} onChange={setYearTo} placeholder="2024" />
+        </div>
+      </FilterGroup>
+
+      <FilterGroup icon={Zap} title="Mudanças">
+        <Select
+          label="Transmissão"
+          value={transmission}
+          onChange={setTransmission}
+          options={[
+            { value: "all", label: "Todas" },
+            ...transmissions.map((value) => ({ value, label: value })),
+          ]}
+        />
+      </FilterGroup>
+
+      <FilterGroup icon={Gauge} title="Quilometragem">
+        <NumberField label="Km máximo" value={kmMax} onChange={setKmMax} placeholder="150000" />
+      </FilterGroup>
+
+      <FilterGroup icon={Sparkles} title="Preço">
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField label="Mínimo" value={priceMin} onChange={setPriceMin} placeholder="10000" />
+          <NumberField label="Máximo" value={priceMax} onChange={setPriceMax} placeholder="50000" />
+        </div>
+      </FilterGroup>
+
+      <FilterGroup icon={Sparkles} title="Documentos e entrega">
+        <ToggleField label="COC disponível" checked={hasCoc} onChange={setHasCoc} />
+        <ToggleField label="Disponível imediatamente" checked={immediate} onChange={setImmediate} />
+      </FilterGroup>
+    </>
+  );
+}
+
+function AuctionTypeOption({
+  label,
+  count,
+  checked,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  checked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-left text-sm transition hover:bg-primary/5"
+    >
+      <span className="flex items-center gap-2">
+        <span
+          className={
+            checked
+              ? "size-4 rounded border border-primary bg-primary"
+              : "size-4 rounded border border-primary"
+          }
+        />
+        {label}
+      </span>
+      <span className="rounded bg-muted px-1.5 text-xs font-extrabold text-slate-600">{count}</span>
+    </button>
+  );
+}
+
+function DisabledFilter({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm text-muted-foreground opacity-60">
+      <span className="flex items-center gap-2">
+        <span className="size-4 rounded border border-primary/60" />
+        {label}
+      </span>
+      <span className="rounded bg-muted px-1.5 text-xs font-extrabold text-slate-600">{count}</span>
     </div>
   );
 }
