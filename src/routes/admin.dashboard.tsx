@@ -153,7 +153,7 @@ function AdminDashboard() {
         </button>
       </div>
 
-      {error && (
+      {error ? (
         <div className="mb-6">
           <ErrorState
             title="Falha parcial ao atualizar (a mostrar últimos dados)."
@@ -162,7 +162,7 @@ function AdminDashboard() {
             variant="inline"
           />
         </div>
-      )}
+      ) : null}
 
       {/* KPIs */}
       <div className="grid gap-4 md:grid-cols-4">
